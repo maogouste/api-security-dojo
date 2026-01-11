@@ -534,19 +534,23 @@ public class VulnApiApplication {
             .field(f -> f.name("users").type(GraphQLList.list(userType))
                 .dataFetcher(env -> {
                     var rows = jdbc.queryForList("SELECT * FROM users");
-                    return rows.stream().map(r -> Map.of(
-                        "id", r.get("id"), "username", r.get("username"), "email", r.get("email"),
-                        "role", r.get("role"), "ssn", r.get("ssn"), "creditCard", r.get("credit_card"),
-                        "secretNote", r.get("secret_note"), "apiKey", r.get("api_key")
-                    )).toList();
+                    return rows.stream().map(r -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", r.get("id")); m.put("username", r.get("username")); m.put("email", r.get("email"));
+                        m.put("role", r.get("role")); m.put("ssn", r.get("ssn")); m.put("creditCard", r.get("credit_card"));
+                        m.put("secretNote", r.get("secret_note")); m.put("apiKey", r.get("api_key"));
+                        return m;
+                    }).toList();
                 }))
             .field(f -> f.name("products").type(GraphQLList.list(productType))
                 .dataFetcher(env -> {
                     var rows = jdbc.queryForList("SELECT * FROM products");
-                    return rows.stream().map(r -> Map.of(
-                        "id", r.get("id"), "name", r.get("name"), "description", r.get("description"),
-                        "price", r.get("price"), "internalNotes", r.get("internal_notes"), "supplierCost", r.get("supplier_cost")
-                    )).toList();
+                    return rows.stream().map(r -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", r.get("id")); m.put("name", r.get("name")); m.put("description", r.get("description"));
+                        m.put("price", r.get("price")); m.put("internalNotes", r.get("internal_notes")); m.put("supplierCost", r.get("supplier_cost"));
+                        return m;
+                    }).toList();
                 }))
             .build();
 
