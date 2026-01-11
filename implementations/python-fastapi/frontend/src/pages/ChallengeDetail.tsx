@@ -52,7 +52,7 @@ export default function ChallengeDetail() {
     setFlagResult(null);
 
     try {
-      const result = await flagsApi.submit(id, flag.trim());
+      const result = await flagsApi.submit(flag.trim());
       setFlagResult(result);
       if (result.success) {
         setFlag('');

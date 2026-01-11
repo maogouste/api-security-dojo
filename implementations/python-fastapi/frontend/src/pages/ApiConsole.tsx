@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { executeRequest } from '../services/api';
 import type { RequestResult } from '../services/api';
+import { useBackend } from '../contexts/BackendContext';
 
 interface RequestHistory {
   id: number;
@@ -11,8 +12,9 @@ interface RequestHistory {
 }
 
 export default function ApiConsole() {
+  const { backend } = useBackend();
   const [method, setMethod] = useState('GET');
-  const [url, setUrl] = useState('/api/users/me');
+  const [url, setUrl] = useState('/api/me');
   const [body, setBody] = useState('');
   const [headers, setHeaders] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,13 +24,13 @@ export default function ApiConsole() {
 
   const commonEndpoints = [
     { method: 'POST', url: '/api/login', body: '{"username": "john", "password": "password123"}' },
-    { method: 'GET', url: '/api/users/me', body: '' },
+    { method: 'GET', url: '/api/me', body: '' },
     { method: 'GET', url: '/api/users/1', body: '' },
     { method: 'GET', url: '/api/products', body: '' },
-    { method: 'GET', url: '/api/products?search=laptop', body: '' },
+    { method: 'GET', url: "/api/products?search=' OR '1'='1", body: '' },
     { method: 'POST', url: '/api/tools/ping', body: '{"host": "127.0.0.1"}' },
     { method: 'GET', url: '/api/v1/users', body: '' },
-    { method: 'POST', url: '/graphql/', body: '{"query": "{ users { id username } }"}' },
+    { method: 'POST', url: '/graphql/', body: '{"query": "{ users { id username ssn } }"}' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,7 +114,12 @@ export default function ApiConsole() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">API Console</h1>
-        <p className="text-slate-400">Test API endpoints and explore vulnerabilities.</p>
+        <p className="text-slate-400">
+          Test API endpoints and explore vulnerabilities.
+          <span className="ml-2 text-xs bg-slate-700 px-2 py-1 rounded">
+            {backend.icon} {backend.name} - {backend.baseUrl}
+          </span>
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

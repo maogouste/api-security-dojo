@@ -1,17 +1,35 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { docsApi } from '../services/api';
+import { useBackend } from '../contexts/BackendContext';
 import type { ApiMode, ApiStats } from '../types';
 
 export default function Layout() {
   const location = useLocation();
+  const { backend, setBackend, backends } = useBackend();
   const [mode, setMode] = useState<ApiMode | null>(null);
   const [stats, setStats] = useState<ApiStats | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'online' | 'offline' | 'checking'>('checking');
 
+  // Check backend status and load data when backend changes
   useEffect(() => {
-    docsApi.getMode().then(setMode).catch(console.error);
-    docsApi.getStats().then(setStats).catch(console.error);
-  }, []);
+    setBackendStatus('checking');
+    setMode(null);
+    setStats(null);
+
+    docsApi.getMode()
+      .then((data) => {
+        setMode(data);
+        setBackendStatus('online');
+      })
+      .catch(() => {
+        setBackendStatus('offline');
+      });
+
+    docsApi.getStats()
+      .then(setStats)
+      .catch(console.error);
+  }, [backend]);
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
@@ -33,6 +51,39 @@ export default function Layout() {
               <p className="text-xs text-slate-400">Security Learning Platform</p>
             </div>
           </Link>
+        </div>
+
+        {/* Backend selector */}
+        <div className="p-4 border-b border-slate-700">
+          <label className="block text-xs uppercase text-slate-500 mb-2">Backend</label>
+          <div className="space-y-1">
+            {backends.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => setBackend(b)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left transition-colors ${
+                  backend.id === b.id
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                <span>{b.icon}</span>
+                <span className="flex-1">{b.name}</span>
+                <span className="text-xs opacity-60">{b.language}</span>
+              </button>
+            ))}
+          </div>
+          {/* Status indicator */}
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            <span className={`w-2 h-2 rounded-full ${
+              backendStatus === 'online' ? 'bg-green-500' :
+              backendStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'
+            }`} />
+            <span className="text-slate-400">
+              {backendStatus === 'online' ? `Connected to ${backend.baseUrl}` :
+               backendStatus === 'offline' ? 'Backend offline' : 'Connecting...'}
+            </span>
+          </div>
         </div>
 
         {/* Mode indicator */}

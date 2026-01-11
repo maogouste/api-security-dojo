@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { executeRequest } from '../services/api';
+import { useBackend } from '../contexts/BackendContext';
 
 export default function GraphQLConsole() {
+  const { backend } = useBackend();
   const [query, setQuery] = useState(`{
   __schema {
     types {
@@ -279,13 +281,16 @@ export default function GraphQLConsole() {
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <h3 className="font-semibold mb-3">External Tools</h3>
             <a
-              href="/graphql/"
+              href={`${backend.baseUrl}/graphql/`}
               target="_blank"
               rel="noopener noreferrer"
               className="block bg-purple-600 hover:bg-purple-700 text-center py-2 rounded"
             >
               Open GraphiQL →
             </a>
+            <p className="text-xs text-slate-500 mt-2 text-center">
+              {backend.name} ({backend.baseUrl})
+            </p>
           </div>
         </div>
       </div>

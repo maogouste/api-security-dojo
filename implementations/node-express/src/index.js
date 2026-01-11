@@ -20,6 +20,7 @@ import { usersRouter, usersRouterV1 } from './routes/users.js';
 import productsRouter from './routes/products.js';
 import toolsRouter from './routes/tools.js';
 import flagsRouter from './routes/flags.js';
+import docsRouter from './routes/docs.js';
 import graphqlSchema from './graphql/schema.js';
 
 const app = express();
@@ -124,24 +125,8 @@ app.use('/graphql', graphqlHTTP((req) => {
   };
 }));
 
-// Documentation endpoint (simplified)
-app.get('/api/docs/mode', (req, res) => {
-  res.json({
-    mode: MODE,
-    description: MODE === 'documentation'
-      ? 'Full documentation mode - all details available'
-      : 'Challenge mode - limited information, find vulnerabilities yourself'
-  });
-});
-
-app.get('/api/docs/stats', (req, res) => {
-  res.json({
-    total_challenges: 15,
-    rest_challenges: 10,
-    graphql_challenges: 5,
-    categories: ['authentication', 'authorization', 'injection', 'misconfiguration', 'graphql']
-  });
-});
+// Documentation endpoints
+app.use('/api/docs', docsRouter);
 
 // ==================== Start Server ====================
 

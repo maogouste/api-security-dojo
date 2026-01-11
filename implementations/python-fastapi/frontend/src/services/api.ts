@@ -9,21 +9,41 @@ import type {
   AuthResponse,
 } from '../types';
 
-const api = axios.create({
-  baseURL: '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Get the base URL from localStorage or default to FastAPI
+function getBaseUrl(): string {
+  const backendId = localStorage.getItem('vulnapi_backend') || 'fastapi';
+  const backends: Record<string, string> = {
+    fastapi: 'http://localhost:8000',
+    express: 'http://localhost:3001',
+  };
+  return backends[backendId] || backends.fastapi;
+}
 
-// Add auth token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Create axios instance with dynamic base URL
+const createApi = () => {
+  const instance = axios.create({
+    baseURL: getBaseUrl() + '/api',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  // Add auth token to requests if available
+  instance.interceptors.request.use((config) => {
+    // Update base URL on each request in case backend changed
+    config.baseURL = getBaseUrl() + '/api';
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  return instance;
+};
+
+const api = createApi();
 
 // Documentation API
 export const docsApi = {
@@ -67,18 +87,15 @@ export const authApi = {
   },
 
   getCurrentUser: async () => {
-    const response = await api.get('/users/me');
+    const response = await api.get('/me');
     return response.data;
   },
 };
 
 // Flags API
 export const flagsApi = {
-  submit: async (challengeId: string, flag: string): Promise<FlagResult> => {
-    const response = await api.post('/flags/submit', {
-      challenge_id: challengeId,
-      flag,
-    });
+  submit: async (flag: string): Promise<FlagResult> => {
+    const response = await api.post('/flags/submit', { flag });
     return response.data;
   },
 
@@ -103,16 +120,31 @@ export const executeRequest = async (
   headers?: Record<string, string>
 ): Promise<RequestResult> => {
   try {
+    const baseUrl = getBaseUrl();
+    const url = endpoint.startsWith('http')
+      ? endpoint
+      : baseUrl + (endpoint.startsWith('/') ? endpoint : '/' + endpoint);
+
+    // Build headers with auth token if available
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...headers,
+    };
+
+    const token = localStorage.getItem('token');
+    if (token && !headers?.Authorization) {
+      requestHeaders.Authorization = `Bearer ${token}`;
+    }
+
     const config = {
       method: method.toLowerCase(),
-      url: endpoint.startsWith('/') ? endpoint : `/${endpoint}`,
+      url,
       data: body,
-      headers: headers || {},
+      headers: requestHeaders,
     };
 
     const response = await axios({
       ...config,
-      baseURL: '',
       validateStatus: () => true, // Don't throw on error status
     });
 
@@ -142,5 +174,8 @@ export const executeRequest = async (
     throw error;
   }
 };
+
+// Export base URL getter for components that need it
+export const getCurrentBaseUrl = getBaseUrl;
 
 export default api;
