@@ -252,7 +252,7 @@ VULNAPI_DEBUG=true
 ### Lors des prochaines sessions, rappeler :
 
 1. **Projet** : VulnAPI - API volontairement vulnérable pour l'apprentissage
-2. **Phase actuelle** : [À mettre à jour selon l'avancement]
+2. **Phase actuelle** : Phase 1 terminée (REST + Challenges)
 3. **Stack** : Python/FastAPI, puis multi-langages
 4. **Approche** : Incrémentale, chaque phase livre de la valeur
 5. **Fichier de référence** : Ce document `PROJECT_SPEC.md`
@@ -281,3 +281,4 @@ VULNAPI_DEBUG=true
 | 2026-01-11 | Création du projet, choix de l'approche en 4 phases |
 | 2026-01-11 | Python/FastAPI comme implémentation de référence |
 | 2026-01-11 | Architecture multi-langages prévue dès le départ |
+| 2026-01-11 | Phase 1 terminée : API REST + 10 vulnérabilités OWASP + système de flags |
