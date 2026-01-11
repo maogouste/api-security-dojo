@@ -16,6 +16,9 @@ passlib[bcrypt]>=1.7.0
 # Forms & uploads
 python-multipart>=0.0.6
 
+# GraphQL (Phase 2)
+strawberry-graphql[fastapi]>=0.217.0
+
 # Development
 httpx>=0.26.0
 pytest>=7.4.0

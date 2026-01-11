@@ -150,6 +150,81 @@
       "flag_format": "VULNAPI{logging_*}",
       "endpoints": ["*"],
       "references": ["OWASP API10:2023", "CWE-778"]
+    },
+    {
+      "id": "G01",
+      "name": "GraphQL Introspection Exposed",
+      "category": "graphql",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Discover the GraphQL schema using introspection",
+      "hints": [
+        "GraphQL has a built-in way to query the schema",
+        "Try the __schema query"
+      ],
+      "flag_format": "VULNAPI{graphql_introspection_*}",
+      "endpoints": ["/graphql"],
+      "references": ["CWE-200"]
+    },
+    {
+      "id": "G02",
+      "name": "GraphQL Nested Queries DoS",
+      "category": "graphql",
+      "difficulty": "medium",
+      "points": 200,
+      "description": "Exploit unlimited query depth to cause resource exhaustion",
+      "hints": [
+        "Some types have relationships that reference each other",
+        "How deep can you nest the query?"
+      ],
+      "flag_format": "VULNAPI{graphql_depth_*}",
+      "endpoints": ["/graphql"],
+      "references": ["CWE-400"]
+    },
+    {
+      "id": "G03",
+      "name": "GraphQL Batching Attack",
+      "category": "graphql",
+      "difficulty": "medium",
+      "points": 200,
+      "description": "Execute multiple operations in a single request",
+      "hints": [
+        "GraphQL can accept arrays of operations",
+        "Can you bypass rate limiting with batching?"
+      ],
+      "flag_format": "VULNAPI{graphql_batch_*}",
+      "endpoints": ["/graphql"],
+      "references": ["CWE-770"]
+    },
+    {
+      "id": "G04",
+      "name": "GraphQL Field Suggestions",
+      "category": "graphql",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Use error messages to enumerate available fields",
+      "hints": [
+        "What happens when you query a non-existent field?",
+        "Do error messages give away information?"
+      ],
+      "flag_format": "VULNAPI{graphql_suggestions_*}",
+      "endpoints": ["/graphql"],
+      "references": ["CWE-209"]
+    },
+    {
+      "id": "G05",
+      "name": "GraphQL Authorization Bypass",
+      "category": "graphql",
+      "difficulty": "hard",
+      "points": 300,
+      "description": "Access unauthorized data through GraphQL queries",
+      "hints": [
+        "Are all queries properly protected?",
+        "What data can you access without authentication?"
+      ],
+      "flag_format": "VULNAPI{graphql_authz_*}",
+      "endpoints": ["/graphql"],
+      "references": ["CWE-862"]
     }
   ]
 }

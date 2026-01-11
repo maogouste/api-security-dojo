@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import init_db
 from app.seed import seed_database
 from app.routers import auth, users, products, tools, admin, flags
+from app.graphql import create_graphql_router
 
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ app = FastAPI(
     - SQL Injection
     - Command Injection
     - Broken Authentication
+    - GraphQL-specific vulnerabilities (G01-G05)
     - And more...
 
     ### Mode: """ + settings.mode,
@@ -62,6 +64,16 @@ app.include_router(flags.router, prefix="/api", tags=["Flags"])
 # VULNERABILITY: Old API version still accessible (V09)
 app.include_router(users.router_v1, prefix="/api/v1", tags=["Users (Legacy)"])
 
+# GraphQL endpoint (Phase 2)
+# VULNERABILITIES:
+# - G01: Introspection enabled
+# - G02: No query depth limits
+# - G03: Batching allowed
+# - G04: Field suggestions in errors
+# - G05: Missing authorization on resolvers
+graphql_router = create_graphql_router()
+app.include_router(graphql_router, prefix="/graphql", tags=["GraphQL"])
+
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -77,6 +89,7 @@ async def root():
             "users": "/api/users",
             "products": "/api/products",
             "tools": "/api/tools",
+            "graphql": "/graphql",
         }
     }
 

@@ -177,6 +177,32 @@ async def seed_database():
                 flag_value="VULNAPI{logging_blind_attack_undetected}",
                 description="Demonstrated by performing attacks without logging",
             ),
+            # GraphQL challenges (G01-G05)
+            Flag(
+                challenge_id="G01",
+                flag_value="VULNAPI{graphql_introspection_schema_leaked}",
+                description="Found by using GraphQL introspection to discover schema",
+            ),
+            Flag(
+                challenge_id="G02",
+                flag_value="VULNAPI{graphql_depth_resource_exhaustion}",
+                description="Demonstrated by exploiting unlimited query depth",
+            ),
+            Flag(
+                challenge_id="G03",
+                flag_value="VULNAPI{graphql_batch_rate_limit_bypass}",
+                description="Found by batching multiple operations in one request",
+            ),
+            Flag(
+                challenge_id="G04",
+                flag_value="VULNAPI{graphql_suggestions_field_enumeration}",
+                description="Found by using error messages to enumerate fields",
+            ),
+            Flag(
+                challenge_id="G05",
+                flag_value="VULNAPI{graphql_authz_sensitive_data_exposed}",
+                description="Found by accessing sensitive data without authentication",
+            ),
         ]
 
         for flag in flags:
