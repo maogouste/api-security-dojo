@@ -30,11 +30,11 @@ cd implementations/java-spring && mvn spring-boot:run
 
 | Backend | Language | Port | Framework |
 |---------|----------|------|-----------|
-| python-fastapi | Python | 8000 | FastAPI |
-| node-express | Node.js | 3001 | Express.js |
+| python-fastapi | Python | 3001 | FastAPI |
 | go-gin | Go | 3002 | Gin |
 | php-laravel | PHP | 3003 | Vanilla PHP |
 | java-spring | Java | 3004 | Spring Boot |
+| node-express | Node.js | 3005 | Express.js |
 
 All implementations share:
 - Same vulnerabilities (V01-V10, G01-G05)
@@ -104,13 +104,35 @@ npm install && npm run dev
 
 Access at http://localhost:3000 - includes a backend selector for all 5 implementations.
 
+## Testing
+
+Cross-implementation tests verify GraphQL vulnerabilities (G01-G05) across all backends:
+
+```bash
+# Install test dependencies
+pip install pytest pytest-asyncio httpx
+
+# Run tests (start backends first)
+cd tests
+pytest cross-implementation/ -v
+
+# Test specific backend
+VULNAPI_BACKENDS=python pytest cross-implementation/ -v
+VULNAPI_BACKENDS=go,php pytest cross-implementation/ -v
+
+# Test specific vulnerability
+pytest cross-implementation/ -v -k "G01"
+```
+
+Tests auto-skip when backend is not running.
+
 ## Docker
 
 ```bash
 # Run all backends
 docker-compose up --build
 
-# Services will be available on ports 8000, 3001, 3002, 3003, 3004
+# Services will be available on ports 3001, 3002, 3003, 3004, 3005
 ```
 
 ## Test with API Security Checker
