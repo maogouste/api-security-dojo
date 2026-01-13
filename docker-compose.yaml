@@ -1,28 +1,28 @@
 version: '3.8'
 
 services:
-  vulnapi-python:
+  dojo-python:
     build:
       context: ./implementations/python-fastapi
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - VULNAPI_MODE=challenge
-      - VULNAPI_DB_URL=sqlite+aiosqlite:///./vulnapi.db
-      - VULNAPI_SECRET_KEY=intentionally-weak-secret-key
-      - VULNAPI_DEBUG=true
+      - DOJO_MODE=challenge
+      - DOJO_DB_URL=sqlite+aiosqlite:///./vulnapi.db
+      - DOJO_SECRET_KEY=intentionally-weak-secret-key
+      - DOJO_DEBUG=true
     volumes:
       - ./implementations/python-fastapi:/app
     restart: unless-stopped
 
   # Future implementations can be added here:
-  # vulnapi-node:
+  # dojo-node:
   #   build: ./implementations/node-express
   #   ports:
   #     - "8001:8000"
   #
-  # vulnapi-java:
+  # dojo-java:
   #   build: ./implementations/java-spring
   #   ports:
   #     - "8002:8000"

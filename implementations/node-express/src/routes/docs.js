@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 
 // Load vulnerabilities documentation
 const DOCS_PATH = join(__dirname, '..', 'docs', 'vulnerabilities.json');
-const MODE = process.env.VULNAPI_MODE || 'challenge';
+const MODE = process.env.DOJO_MODE || 'challenge';
 
 function loadVulnerabilities() {
   try {
@@ -32,7 +32,7 @@ function checkDocumentationMode(req, res, next) {
   if (MODE !== 'documentation') {
     return res.status(403).json({
       error: 'Documentation mode is disabled',
-      message: 'Set VULNAPI_MODE=documentation to access vulnerability details',
+      message: 'Set DOJO_MODE=documentation to access vulnerability details',
       current_mode: MODE,
     });
   }

@@ -1,1 +1,1 @@
-"""Tests for VulnAPI."""
+"""Tests for API Security Dojo."""

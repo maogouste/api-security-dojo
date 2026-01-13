@@ -1,4 +1,4 @@
-"""Pytest configuration for VulnAPI tests."""
+"""Pytest configuration for API Security Dojo tests."""
 
 import os
 import sys

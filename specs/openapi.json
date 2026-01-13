@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "VulnAPI",
+    "title": "API Security Dojo",
     "description": "\n    ## Deliberately Vulnerable API for Security Learning\n\n    **WARNING**: This API contains intentional security vulnerabilities.\n    Do NOT deploy in production.\n\n    ### Vulnerabilities included:\n    - OWASP API Security Top 10\n    - SQL Injection\n    - Command Injection\n    - Broken Authentication\n    - And more...\n\n    ### Mode: challenge",
     "version": "0.1.0"
   },

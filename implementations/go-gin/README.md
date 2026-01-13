@@ -1,4 +1,4 @@
-# VulnAPI - Go/Gin Implementation
+# API Security Dojo - Go/Gin Implementation
 
 Intentionally vulnerable API for learning API security.
 

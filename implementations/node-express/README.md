@@ -1,4 +1,4 @@
-# VulnAPI - Express.js Implementation
+# API Security Dojo - Express.js Implementation
 
 Intentionally vulnerable API for learning API security.
 
@@ -65,10 +65,10 @@ Switch modes with the environment variable:
 
 ```bash
 # Challenge mode (default)
-VULNAPI_MODE=challenge npm start
+DOJO_MODE=challenge npm start
 
 # Documentation mode
-VULNAPI_MODE=documentation npm start
+DOJO_MODE=documentation npm start
 ```
 
 ## Example Exploits

@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     rate_limit_window: int = 60
 
     class Config:
-        env_prefix = "VULNAPI_"
+        env_prefix = "DOJO_"
         env_file = ".env"
 
 

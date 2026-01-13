@@ -5,7 +5,7 @@ import pytest
 import httpx
 
 # Base URL for the API (can be overridden via environment variable)
-BASE_URL = os.getenv("VULNAPI_BASE_URL", "http://localhost:8000")
+BASE_URL = os.getenv("DOJO_BASE_URL", "http://localhost:8000")
 
 
 @pytest.fixture

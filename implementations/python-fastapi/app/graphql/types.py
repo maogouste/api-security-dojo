@@ -1,4 +1,4 @@
-"""GraphQL types for VulnAPI.
+"""GraphQL types for API Security Dojo.
 
 VULNERABILITIES:
 - G03: Excessive data exposure (same as V03) - sensitive fields exposed

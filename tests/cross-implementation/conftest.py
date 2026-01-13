@@ -1,7 +1,7 @@
 """
-Pytest configuration for cross-implementation VulnAPI tests.
+Pytest configuration for cross-implementation API Security Dojo tests.
 
-Tests GraphQL G01-G05 vulnerabilities across all backends:
+Tests REST (V01-V10) and GraphQL (G01-G05) vulnerabilities across all backends:
 - Python FastAPI: http://localhost:3001
 - Go Gin:         http://localhost:3002
 - PHP:            http://localhost:3003
@@ -15,13 +15,15 @@ Usage:
     # Test specific backend
     pytest tests/cross-implementation/ -v -k "python"
     pytest tests/cross-implementation/ -v -k "go"
-    pytest tests/cross-implementation/ -v -k "php"
-    pytest tests/cross-implementation/ -v -k "java"
-    pytest tests/cross-implementation/ -v -k "node"
 
-    # Test specific vulnerability
-    pytest tests/cross-implementation/ -v -k "G01"
-    pytest tests/cross-implementation/ -v -k "G02"
+    # Test specific vulnerability type
+    pytest tests/cross-implementation/ -v -k "V01"      # REST BOLA
+    pytest tests/cross-implementation/ -v -k "V06"      # REST SQLi
+    pytest tests/cross-implementation/ -v -k "G01"      # GraphQL Introspection
+
+    # Test REST or GraphQL only
+    pytest tests/cross-implementation/test_rest_vulnerabilities.py -v
+    pytest tests/cross-implementation/test_graphql_vulnerabilities.py -v
 """
 
 import os
@@ -40,7 +42,7 @@ BACKENDS = {
 }
 
 # Allow override via environment variable
-SELECTED_BACKENDS = os.environ.get("VULNAPI_BACKENDS", "python,go,php,java,node").split(",")
+SELECTED_BACKENDS = os.environ.get("DOJO_BACKENDS", "python,go,php,java,node").split(",")
 
 
 def pytest_configure(config):

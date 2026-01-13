@@ -1,4 +1,4 @@
-# VulnAPI - PHP Implementation
+# API Security Dojo - PHP Implementation
 
 Intentionally vulnerable API for learning API security.
 

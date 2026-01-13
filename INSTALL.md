@@ -1,4 +1,4 @@
-# Installing VulnAPI
+# Installing API Security Dojo
 
 ## Prerequisites
 
@@ -58,9 +58,9 @@ nano .env
 **Environment Variables:**
 | Variable | Values | Description |
 |----------|--------|-------------|
-| `VULNAPI_MODE` | `challenge` (default), `documentation` | API mode |
-| `VULNAPI_DEBUG` | `true`, `false` | Debug mode |
-| `VULNAPI_DB_URL` | SQLite URL | Database connection |
+| `DOJO_MODE` | `challenge` (default), `documentation` | API mode |
+| `DOJO_DEBUG` | `true`, `false` | Debug mode |
+| `DOJO_DB_URL` | SQLite URL | Database connection |
 
 ### 5. Start the application
 ```bash
@@ -120,7 +120,7 @@ curl -X POST http://localhost:8000/graphql/ \
 
 ```bash
 # Start in documentation mode
-VULNAPI_MODE=documentation uvicorn app.main:app --reload
+DOJO_MODE=documentation uvicorn app.main:app --reload
 
 # Check current mode
 curl http://localhost:8000/api/docs/mode

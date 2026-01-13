@@ -1,8 +1,8 @@
-# VulnAPI - Intentionally Vulnerable API
+# API Security Dojo - Intentionally Vulnerable API
 
 ## Project Vision
 
-VulnAPI is an educational platform demonstrating security bad practices in APIs. It allows learners to understand, exploit, and fix common vulnerabilities listed in the OWASP API Security Top 10.
+API Security Dojo is an educational platform demonstrating security bad practices in APIs. It allows learners to understand, exploit, and fix common vulnerabilities listed in the OWASP API Security Top 10.
 
 ## Educational Goals
 
@@ -70,7 +70,7 @@ VulnAPI is an educational platform demonstrating security bad practices in APIs.
 **Goal**: Add educational explanations
 
 **Deliverables**:
-- Challenge/documentation toggle via `VULNAPI_MODE` environment variable
+- Challenge/documentation toggle via `DOJO_MODE` environment variable
 - Detailed explanations for all 15 vulnerabilities
 - Vulnerable vs secure code examples
 - OWASP and CWE references
@@ -284,10 +284,10 @@ docker-compose up
 ### Environment Variables
 
 ```
-VULNAPI_MODE=challenge|documentation
-VULNAPI_DB_URL=sqlite:///./vulnapi.db
-VULNAPI_SECRET_KEY=intentionally-weak-secret
-VULNAPI_DEBUG=true
+DOJO_MODE=challenge|documentation
+DOJO_DB_URL=sqlite:///./vulnapi.db
+DOJO_SECRET_KEY=intentionally-weak-secret
+DOJO_DEBUG=true
 ```
 
 ---
@@ -296,7 +296,7 @@ VULNAPI_DEBUG=true
 
 ### For future sessions, remember:
 
-1. **Project**: VulnAPI - Intentionally vulnerable API for learning
+1. **Project**: API Security Dojo - Intentionally vulnerable API for learning
 2. **Current phase**: All 4 phases completed
 3. **Stack**: Python/FastAPI + Strawberry GraphQL + React/Vite frontend
 4. **Features**: 15 challenges, 2 modes, full-featured UI
@@ -304,7 +304,7 @@ VULNAPI_DEBUG=true
 
 ### Useful commands for Claude
 
-- "Continue VulnAPI development phase X"
+- "Continue API Security Dojo development phase X"
 - "Add vulnerability Y to the REST API"
 - "Prepare the reimplementation in [language]"
 - "Generate exploitation tests for vulnerability Z"

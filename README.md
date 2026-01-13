@@ -1,4 +1,4 @@
-# VulnAPI
+# API Security Dojo
 
 Intentionally vulnerable API for learning API security. Available in 5 languages.
 
@@ -11,8 +11,8 @@ This software contains **intentional** security vulnerabilities for educational 
 
 ```bash
 # Clone
-git clone https://github.com/maogouste/vulnapi.git
-cd vulnapi
+git clone https://github.com/maogouste/api-security-dojo.git
+cd api-security-dojo
 
 # Pick your backend
 cd implementations/python-fastapi && pip install -r requirements.txt && uvicorn app.main:app
@@ -87,10 +87,10 @@ All implementations share:
 
 ```bash
 # Challenge mode (default) - find vulnerabilities yourself
-VULNAPI_MODE=challenge uvicorn app.main:app
+DOJO_MODE=challenge uvicorn app.main:app
 
 # Documentation mode - full exploitation details
-VULNAPI_MODE=documentation uvicorn app.main:app
+DOJO_MODE=documentation uvicorn app.main:app
 ```
 
 ## Frontend
@@ -117,8 +117,8 @@ cd tests
 pytest cross-implementation/ -v
 
 # Test specific backend
-VULNAPI_BACKENDS=python pytest cross-implementation/ -v
-VULNAPI_BACKENDS=go,php pytest cross-implementation/ -v
+DOJO_BACKENDS=python pytest cross-implementation/ -v
+DOJO_BACKENDS=go,php pytest cross-implementation/ -v
 
 # Test specific vulnerability
 pytest cross-implementation/ -v -k "G01"
@@ -143,12 +143,10 @@ Use [api-security-checker](https://github.com/maogouste/api-security-checker) to
 # Install scanner
 pip install git+https://github.com/maogouste/api-security-checker.git
 
-# Scan VulnAPI
-apisec vulnapi                    # FastAPI
-apisec vulnapi --backend express  # Express.js
-apisec vulnapi --backend go       # Go
-apisec vulnapi --backend php      # PHP
-apisec vulnapi --backend java     # Java
+# Scan API Security Dojo
+apisec scan http://localhost:8000 -u john -p password123
+apisec scan http://localhost:3002 -u john -p password123  # Go
+apisec scan http://localhost:3003 -u john -p password123  # PHP
 ```
 
 ## Default Credentials

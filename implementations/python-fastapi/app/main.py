@@ -1,4 +1,4 @@
-"""VulnAPI - Main application entry point."""
+"""API Security Dojo - Main application entry point."""
 
 import os
 import sys
@@ -47,7 +47,7 @@ def check_production_environment():
                     CRITICAL SECURITY WARNING
 ================================================================================
 
-  VulnAPI has detected a PRODUCTION-LIKE environment!
+  API Security Dojo has detected a PRODUCTION-LIKE environment!
 
   Detected indicators:
 """
@@ -72,16 +72,16 @@ def check_production_environment():
         print(warning_message, file=sys.stderr)
 
         # Block startup unless explicitly overridden
-        if os.getenv("VULNAPI_FORCE_START") != "true":
+        if os.getenv("DOJO_FORCE_START") != "true":
             print(
                 "  To override this safety check (NOT RECOMMENDED), set:\n"
-                "    VULNAPI_FORCE_START=true\n",
+                "    DOJO_FORCE_START=true\n",
                 file=sys.stderr,
             )
             sys.exit(1)
         else:
             print(
-                "  WARNING: VULNAPI_FORCE_START=true detected.\n"
+                "  WARNING: DOJO_FORCE_START=true detected.\n"
                 "  Proceeding despite production environment detection.\n"
                 "  YOU HAVE BEEN WARNED!\n",
                 file=sys.stderr,
@@ -103,7 +103,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="VulnAPI",
+    title="API Security Dojo",
     description="""
     ## Deliberately Vulnerable API for Security Learning
 
@@ -160,10 +160,10 @@ app.include_router(graphql_router, prefix="/graphql", tags=["GraphQL"])
 async def root():
     """Root endpoint with API information."""
     return {
-        "name": "VulnAPI",
+        "name": "API Security Dojo",
         "version": "0.2.0",
         "mode": settings.mode,
-        "message": "Welcome to VulnAPI - A deliberately vulnerable API",
+        "message": "Welcome to API Security Dojo - A deliberately vulnerable API",
         "swagger_docs": "/docs",
         "endpoints": {
             "auth": "/api/login, /api/register",
@@ -177,7 +177,7 @@ async def root():
             "current": settings.mode,
             "challenge": "Limited info - find vulnerabilities yourself",
             "documentation": "Full details - exploitation steps and remediation",
-            "switch": "Set VULNAPI_MODE=documentation to enable full docs",
+            "switch": "Set DOJO_MODE=documentation to enable full docs",
         }
     }
 

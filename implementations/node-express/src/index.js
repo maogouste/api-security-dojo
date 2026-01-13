@@ -25,7 +25,7 @@ import graphqlSchema from './graphql/schema.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const MODE = process.env.VULNAPI_MODE || 'challenge';
+const MODE = process.env.DOJO_MODE || 'challenge';
 
 // ==================== Middleware ====================
 
@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
       current: MODE,
       challenge: 'Limited info - find vulnerabilities yourself',
       documentation: 'Full details - exploitation steps and remediation',
-      switch: 'Set VULNAPI_MODE=documentation to enable full docs',
+      switch: 'Set DOJO_MODE=documentation to enable full docs',
     }
   });
 });

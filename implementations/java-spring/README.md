@@ -1,4 +1,4 @@
-# VulnAPI - Java/Spring Boot Implementation
+# API Security Dojo - Java/Spring Boot Implementation
 
 Intentionally vulnerable API for learning API security.
 

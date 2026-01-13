@@ -68,7 +68,7 @@ def check_documentation_mode():
             status_code=403,
             detail={
                 "error": "Documentation mode is disabled",
-                "message": "Set VULNAPI_MODE=documentation to access vulnerability details",
+                "message": "Set DOJO_MODE=documentation to access vulnerability details",
                 "current_mode": settings.mode,
             }
         )

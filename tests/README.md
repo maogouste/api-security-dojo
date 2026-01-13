@@ -1,8 +1,25 @@
-# VulnAPI Cross-Implementation Tests
+# API Security Dojo Cross-Implementation Tests
 
-Tests GraphQL vulnerabilities (G01-G05) across all VulnAPI implementations.
+Tests REST (V01-V10) and GraphQL (G01-G05) vulnerabilities across all API Security Dojo implementations.
 
 ## Tested Vulnerabilities
+
+### REST API (V01-V10)
+
+| ID  | Vulnerability              | OWASP       | Description                               |
+|-----|---------------------------|-------------|-------------------------------------------|
+| V01 | BOLA                      | API1:2023   | Access other users' data without auth     |
+| V02 | Broken Authentication     | API2:2023   | User enumeration, weak passwords          |
+| V03 | Excessive Data Exposure   | API3:2023   | Internal notes, supplier cost exposed     |
+| V04 | Lack of Rate Limiting     | API4:2023   | No rate limit on login/API endpoints      |
+| V05 | Mass Assignment           | API6:2023   | Role escalation via field injection       |
+| V06 | SQL Injection             | API8:2023   | SQLi in product search                    |
+| V07 | Command Injection         | API8:2023   | RCE in ping/dns tools                     |
+| V08 | Security Misconfiguration | API7:2023   | CORS *, debug endpoint, missing headers   |
+| V09 | Improper Assets Mgmt      | API9:2023   | Legacy API exposes password hashes        |
+| V10 | Insufficient Logging      | API10:2023  | No account lockout, attacks not blocked   |
+
+### GraphQL (G01-G05)
 
 | ID  | Vulnerability          | Description                               |
 |-----|------------------------|-------------------------------------------|
@@ -39,65 +56,84 @@ source ../implementations/python-fastapi/venv/bin/activate
 # Start all backends first
 cd ../implementations/python-fastapi && ./start.sh &
 cd ../implementations/go-gin && go run main.go &
-cd ../implementations/php-laravel && php -S localhost:3003 &
+cd ../implementations/php-laravel && php -S localhost:3003 index.php &
 cd ../implementations/java-spring && mvn spring-boot:run &
 cd ../implementations/node-express && npm start &
 
-# Run tests
+# Run all tests
 pytest cross-implementation/ -v
 ```
 
 ### Test Specific Backend
 ```bash
 # Using environment variable
-VULNAPI_BACKENDS=python pytest cross-implementation/ -v
-VULNAPI_BACKENDS=go,php pytest cross-implementation/ -v
+DOJO_BACKENDS=python pytest cross-implementation/ -v
+DOJO_BACKENDS=go,php pytest cross-implementation/ -v
+```
 
-# Using the script
-./cross-implementation/run_tests.sh python
-./cross-implementation/run_tests.sh go php java
+### Test REST or GraphQL Only
+```bash
+# REST tests only (V01-V10)
+pytest cross-implementation/test_rest_vulnerabilities.py -v
+
+# GraphQL tests only (G01-G05)
+pytest cross-implementation/test_graphql_vulnerabilities.py -v
 ```
 
 ### Test Specific Vulnerability
 ```bash
+# Single vulnerability
+pytest cross-implementation/ -v -k "V01"
+pytest cross-implementation/ -v -k "V06"
 pytest cross-implementation/ -v -k "G01"
-pytest cross-implementation/ -v -k "G02 or G03"
-pytest cross-implementation/ -v -k "test_G05_users_query_without_auth"
+
+# Multiple vulnerabilities
+pytest cross-implementation/ -v -k "V01 or V06"
+pytest cross-implementation/ -v -k "SQLi or BOLA"
 ```
 
 ### Combined Filters
 ```bash
-# Test G01 on Go and PHP only
-VULNAPI_BACKENDS=go,php pytest cross-implementation/ -v -k "G01"
+# Test V06 (SQLi) on Go and PHP only
+DOJO_BACKENDS=go,php pytest cross-implementation/ -v -k "V06"
+
+# Test all REST vulns on Python only
+DOJO_BACKENDS=python pytest cross-implementation/test_rest_vulnerabilities.py -v
 ```
 
 ## Test Output
 
 Tests print vulnerability findings:
 ```
-[python] G01 VULNERABLE: Found 15 types via introspection
-[python] G02 VULNERABLE: Deep nested query accepted
-[python] G03 VULNERABLE: 5 batched queries executed
-[python] G04 VULNERABLE: Field suggestions enabled
-[python] G05 VULNERABLE: 3 users exposed without auth
+[python] V01 VULNERABLE: Accessed admin user data without auth
+[python] V06 VULNERABLE: SQLi returned 6 products (including hidden)
+[python] V07 VULNERABLE: Command injection successful
+[python] V09 VULNERABLE: Legacy API exposes password hashes
 ```
 
 Summary test shows all vulnerabilities at once:
 ```
-[python] VULNERABILITY SUMMARY:
-  G01_introspection: VULNERABLE
-  G02_depth: VULNERABLE
-  G03_batching: VULNERABLE
-  G04_suggestions: VULNERABLE
-  G05_auth_bypass: VULNERABLE
-  Total: 5/5 vulnerabilities present
+[python] REST VULNERABILITY SUMMARY:
+  V01_bola: VULNERABLE
+  V02_auth: VULNERABLE
+  V03_exposure: VULNERABLE
+  V04_rate_limit: VULNERABLE
+  V05_mass_assign: VULNERABLE
+  V06_sqli: VULNERABLE
+  V07_cmdi: VULNERABLE
+  V08_misconfig: VULNERABLE
+  V09_legacy: VULNERABLE
+  V10_logging: VULNERABLE
+  Total: 10/10 vulnerabilities present
 ```
 
 ## Test Count
 
-- 15 test methods
-- 5 backends
-- **75 total tests** (15 × 5)
+| Test File                        | Tests | Per Backend | Total (5 backends) |
+|----------------------------------|-------|-------------|--------------------|
+| test_rest_vulnerabilities.py     | 25    | 25          | 125                |
+| test_graphql_vulnerabilities.py  | 15    | 15          | 75                 |
+| **Total**                        | **40**| **40**      | **200**            |
 
 ## Auto-Skip
 

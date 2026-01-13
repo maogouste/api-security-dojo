@@ -1,7 +1,7 @@
 {
   "name": "vulnapi-express",
   "version": "0.2.0",
-  "description": "VulnAPI - Intentionally Vulnerable API (Express.js Implementation)",
+  "description": "API Security Dojo - Intentionally Vulnerable API (Express.js Implementation)",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
