@@ -1,0 +1,37 @@
+[package]
+name = "api-security-dojo"
+version = "0.1.0"
+edition = "2021"
+description = "Intentionally vulnerable API for learning - Rust/Actix-web implementation"
+license = "MIT"
+
+[dependencies]
+# Web framework
+actix-web = "4"
+actix-cors = "0.7"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
+
+# GraphQL
+async-graphql = "6"
+async-graphql-actix-web = "6"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Authentication
+jsonwebtoken = "9"
+bcrypt = "0.15"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+env_logger = "0.11"
+log = "0.4"
+dotenv = "0.15"
+

@@ -41,6 +41,7 @@ go = "DOJO_BACKENDS=go pytest tests/cross-implementation/ -v {args}"
 php = "DOJO_BACKENDS=php pytest tests/cross-implementation/ -v {args}"
 java = "DOJO_BACKENDS=java pytest tests/cross-implementation/ -v {args}"
 node = "DOJO_BACKENDS=node pytest tests/cross-implementation/ -v {args}"
+rust = "DOJO_BACKENDS=rust pytest tests/cross-implementation/ -v {args}"
 
 # Test specific vulnerability
 v01 = "pytest tests/cross-implementation/ -v -k V01 {args}"

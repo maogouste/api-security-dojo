@@ -26,6 +26,7 @@ cd implementations/node-express && npm install && npm start      # :3005
 cd implementations/go-gin && go run main.go                      # :3002
 cd implementations/php-laravel && php -S localhost:3003 index.php
 cd implementations/java-spring && mvn spring-boot:run            # :3004
+cd implementations/rust-actix && cargo run                       # :3006
 ```
 
 ## Implementations
@@ -37,6 +38,7 @@ cd implementations/java-spring && mvn spring-boot:run            # :3004
 | php-laravel | PHP | 3003 | Vanilla PHP |
 | java-spring | Java | 3004 | Spring Boot |
 | node-express | Node.js | 3005 | Express.js |
+| rust-actix | Rust | 3006 | Actix-web |
 
 All implementations share:
 - Same vulnerabilities (V01-V10, G01-G05)
@@ -113,6 +115,7 @@ hatch run health         # Health endpoint tests
 # Test specific backend
 hatch run python         # Python only
 hatch run go             # Go only
+hatch run rust           # Rust only
 
 # Test specific vulnerability
 hatch run v01            # BOLA tests

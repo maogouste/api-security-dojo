@@ -39,10 +39,11 @@ BACKENDS = {
     "php": {"url": "http://localhost:3003", "graphql_path": "/graphql"},
     "java": {"url": "http://localhost:3004", "graphql_path": "/graphql"},
     "node": {"url": "http://localhost:3005", "graphql_path": "/graphql"},
+    "rust": {"url": "http://localhost:3006", "graphql_path": "/graphql"},
 }
 
 # Allow override via environment variable
-SELECTED_BACKENDS = os.environ.get("DOJO_BACKENDS", "python,go,php,java,node").split(",")
+SELECTED_BACKENDS = os.environ.get("DOJO_BACKENDS", "python,go,php,java,node,rust").split(",")
 
 
 def pytest_configure(config):
