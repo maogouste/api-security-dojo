@@ -107,6 +107,69 @@ class DocsHandler
         echo json_encode(['detail' => "Vulnerability $id not found"]);
     }
 
+    private static function getKeyDifferences(): array
+    {
+        return [
+            'V01' => 'Add authorization check: verify user owns the resource or has admin role',
+            'V02' => 'Use strong secrets from environment + generic error messages',
+            'V03' => 'Use response models (DTOs) to filter sensitive fields',
+            'V04' => 'Implement rate limiting with sliding window or token bucket',
+            'V05' => 'Whitelist allowed fields, never bind request directly to model',
+            'V06' => 'Use parameterized queries, never concatenate user input into SQL',
+            'V07' => 'Validate input strictly, use safe APIs instead of shell execution',
+            'V08' => 'Configure CORS properly, disable debug endpoints in production',
+            'V09' => 'Deprecate and remove old API versions, apply same security controls',
+            'V10' => 'Log security events, implement alerting on suspicious patterns',
+            'G01' => 'Disable introspection in production',
+            'G02' => 'Set query depth limit: max_depth=10',
+            'G03' => 'Limit batch size and implement query cost analysis',
+            'G04' => 'Disable field suggestions in production errors',
+            'G05' => 'Add authorization checks to all resolvers',
+        ];
+    }
+
+    public static function compareList(): void
+    {
+        $vulns = self::loadVulnerabilities();
+        $keyDiffs = self::getKeyDifferences();
+        $result = [];
+
+        foreach ($vulns as $v) {
+            $result[] = [
+                'id' => $v['id'],
+                'name' => $v['name'],
+                'key_difference' => $keyDiffs[$v['id']] ?? '',
+            ];
+        }
+
+        echo json_encode($result);
+    }
+
+    public static function compare(string $id): void
+    {
+        $vulns = self::loadVulnerabilities();
+        $keyDiffs = self::getKeyDifferences();
+
+        foreach ($vulns as $v) {
+            if ($v['id'] === $id) {
+                echo json_encode([
+                    'id' => $v['id'],
+                    'name' => $v['name'],
+                    'vulnerable_code' => $v['vulnerable_code'],
+                    'secure_code' => $v['secure_code'],
+                    'key_difference' => $keyDiffs[$id] ?? 'See secure_code for the fix',
+                    'remediation' => $v['remediation'],
+                    'owasp' => $v['owasp'],
+                    'cwe' => $v['cwe'],
+                ]);
+                return;
+            }
+        }
+
+        http_response_code(404);
+        echo json_encode(['detail' => "Vulnerability $id not found"]);
+    }
+
     private static function loadVulnerabilities(): array
     {
         $path = dirname(__DIR__, 2) . '/vulnerabilities.json';

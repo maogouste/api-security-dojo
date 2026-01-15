@@ -1,0 +1,39 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "john",
+    "password": "password123"
+  }
+}
+
+script:post-response {
+  if (res.body.access_token) {
+    bru.setEnvVar("token", res.body.access_token);
+  }
+}
+
+docs {
+  # Login
+
+  Authenticate and get JWT token.
+
+  ## Default Credentials
+  - admin:admin123 (admin)
+  - john:password123 (user)
+  - jane:password456 (user)
+
+  ## V02: Broken Authentication
+  - Weak JWT secret
+  - User enumeration via error messages
+}

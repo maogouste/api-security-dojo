@@ -18,6 +18,7 @@ function getBaseUrl(): string {
     go: 'http://localhost:3002',
     php: 'http://localhost:3003',
     java: 'http://localhost:3004',
+    rust: 'http://localhost:3006',
   };
   return backends[backendId] || backends.fastapi;
 }
@@ -73,6 +74,25 @@ export const docsApi = {
 
   getVulnerability: async (id: string): Promise<VulnerabilityDetail> => {
     const response = await api.get(`/docs/vulnerabilities/${id}`);
+    return response.data;
+  },
+
+  getCompareList: async (): Promise<{ id: string; name: string; key_difference: string }[]> => {
+    const response = await api.get('/docs/compare');
+    return response.data;
+  },
+
+  getCompare: async (id: string): Promise<{
+    id: string;
+    name: string;
+    vulnerable_code: string;
+    secure_code: string;
+    key_difference: string;
+    remediation: string[];
+    owasp: string;
+    cwe: string;
+  }> => {
+    const response = await api.get(`/docs/compare/${id}`);
     return response.data;
   },
 };

@@ -130,7 +130,7 @@ API Security Dojo is an educational platform demonstrating security bad practice
 
 **Running the Frontend**:
 ```bash
-cd implementations/python-fastapi/frontend
+cd frontend
 npm install
 npm run dev  # Development at http://localhost:3000
 npm run build  # Production build

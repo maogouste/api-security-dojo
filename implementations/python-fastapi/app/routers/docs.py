@@ -52,6 +52,17 @@ class VulnerabilityListItem(BaseModel):
     description: str
 
 
+class CodeComparison(BaseModel):
+    id: str
+    name: str
+    vulnerable_code: str
+    secure_code: str
+    key_difference: str
+    remediation: List[str]
+    owasp: str
+    cwe: str
+
+
 def load_vulnerabilities() -> dict:
     """Load vulnerabilities documentation from JSON file."""
     if not DOCS_PATH.exists():
@@ -147,6 +158,74 @@ async def get_vulnerability(vuln_id: str):
         status_code=404,
         detail=f"Vulnerability {vuln_id} not found"
     )
+
+
+# Key differences for each vulnerability (educational summaries)
+KEY_DIFFERENCES = {
+    "V01": "Add authorization check: verify user owns the resource or has admin role",
+    "V02": "Use strong secrets from environment + generic error messages",
+    "V03": "Use response models (DTOs) to filter sensitive fields",
+    "V04": "Implement rate limiting with sliding window or token bucket",
+    "V05": "Whitelist allowed fields, never bind request directly to model",
+    "V06": "Use parameterized queries, never concatenate user input into SQL",
+    "V07": "Validate input strictly, use safe APIs instead of shell execution",
+    "V08": "Configure CORS properly, disable debug endpoints in production",
+    "V09": "Deprecate and remove old API versions, apply same security controls",
+    "V10": "Log security events, implement alerting on suspicious patterns",
+    "G01": "Disable introspection in production: introspection=False",
+    "G02": "Set query depth limit: max_depth=10",
+    "G03": "Limit batch size and implement query cost analysis",
+    "G04": "Disable field suggestions in production errors",
+    "G05": "Add authorization checks to all resolvers",
+}
+
+
+@router.get("/compare/{vuln_id}", response_model=CodeComparison)
+async def compare_code(vuln_id: str):
+    """
+    Compare vulnerable vs secure code for a specific vulnerability.
+
+    Available in BOTH challenge and documentation modes.
+    This is an educational endpoint to help learn secure coding practices.
+    """
+    data = load_vulnerabilities()
+    vulnerabilities = data.get("vulnerabilities", [])
+
+    for vuln in vulnerabilities:
+        if vuln["id"] == vuln_id:
+            return CodeComparison(
+                id=vuln["id"],
+                name=vuln["name"],
+                vulnerable_code=vuln["vulnerable_code"],
+                secure_code=vuln["secure_code"],
+                key_difference=KEY_DIFFERENCES.get(vuln_id, "See secure_code for the fix"),
+                remediation=vuln["remediation"],
+                owasp=vuln["owasp"],
+                cwe=vuln["cwe"],
+            )
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"Vulnerability {vuln_id} not found"
+    )
+
+
+@router.get("/compare")
+async def list_comparisons():
+    """
+    List all available code comparisons.
+    """
+    data = load_vulnerabilities()
+    vulnerabilities = data.get("vulnerabilities", [])
+
+    return [
+        {
+            "id": vuln["id"],
+            "name": vuln["name"],
+            "key_difference": KEY_DIFFERENCES.get(vuln["id"], ""),
+        }
+        for vuln in vulnerabilities
+    ]
 
 
 @router.get("/categories")

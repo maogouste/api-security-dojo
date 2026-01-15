@@ -139,6 +139,8 @@ func main() {
 	r.GET("/api/docs/categories", handlers.DocsCategoriesHandler)
 	r.GET("/api/docs/vulnerabilities", handlers.DocsVulnerabilitiesHandler)
 	r.GET("/api/docs/vulnerabilities/:id", handlers.DocsVulnerabilityHandler)
+	r.GET("/api/docs/compare", handlers.DocsCompareListHandler)
+	r.GET("/api/docs/compare/:id", handlers.DocsCompareHandler)
 
 	// GraphQL
 	r.Any("/graphql", gql.GraphQLHandler())

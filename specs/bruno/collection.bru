@@ -1,0 +1,18 @@
+headers {
+  Content-Type: application/json
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:pre-request {
+  // Auto-add token if available
+  if (bru.getEnvVar("token")) {
+    req.setHeader("Authorization", "Bearer " + bru.getEnvVar("token"));
+  }
+}

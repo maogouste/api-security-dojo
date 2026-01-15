@@ -72,7 +72,7 @@ services:
   # Frontend - port 3000
   frontend:
     build:
-      context: ./implementations/python-fastapi/frontend
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "3000:80"

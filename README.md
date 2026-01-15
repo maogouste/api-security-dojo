@@ -1,6 +1,6 @@
 # API Security Dojo
 
-Intentionally vulnerable API for learning API security. Available in 5 languages.
+Intentionally vulnerable API for learning API security. Available in 6 languages.
 
 ## Warning
 
@@ -138,11 +138,11 @@ DOJO_MODE=documentation hatch run serve
 A React frontend is included for interactive exploration:
 
 ```bash
-cd implementations/python-fastapi/frontend
+cd frontend
 npm install && npm run dev
 ```
 
-Access at http://localhost:3000 - includes a backend selector for all 5 implementations.
+Access at http://localhost:3000 - includes a backend selector for all 6 implementations.
 
 ## Docker
 

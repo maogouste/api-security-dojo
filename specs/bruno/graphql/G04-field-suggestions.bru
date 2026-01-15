@@ -1,0 +1,34 @@
+meta {
+  name: G04 Field Suggestions
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ users { pasword } }"
+  }
+}
+
+docs {
+  # G04: GraphQL Field Suggestions
+
+  ## Vulnerability
+  Error messages reveal valid field names.
+
+  ## Exploit
+  Query with typo "pasword" instead of "password".
+  Error message suggests: "Did you mean password_hash?"
+
+  ## Impact
+  Schema enumeration without introspection.
+
+  ## Flag
+  VULNAPI{graphql_suggestions_*}
+}

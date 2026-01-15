@@ -3,9 +3,21 @@ import { useParams, Link } from 'react-router-dom';
 import { docsApi, flagsApi } from '../services/api';
 import type { VulnerabilityDetail, Vulnerability, FlagResult } from '../types';
 
+interface CompareData {
+  id: string;
+  name: string;
+  vulnerable_code: string;
+  secure_code: string;
+  key_difference: string;
+  remediation: string[];
+  owasp: string;
+  cwe: string;
+}
+
 export default function ChallengeDetail() {
   const { id } = useParams<{ id: string }>();
   const [vuln, setVuln] = useState<VulnerabilityDetail | Vulnerability | null>(null);
+  const [compareData, setCompareData] = useState<CompareData | null>(null);
   const [isDocMode, setIsDocMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +31,8 @@ export default function ChallengeDetail() {
     setLoading(true);
     setError(null);
 
-    // First try to get full details (documentation mode)
-    docsApi
+    // Load both vulnerability info and compare data in parallel
+    const loadVuln = docsApi
       .getVulnerability(id)
       .then((data) => {
         setVuln(data);
@@ -28,19 +40,22 @@ export default function ChallengeDetail() {
       })
       .catch(() => {
         // Fall back to basic info (challenge mode)
-        docsApi
-          .getVulnerabilities()
-          .then((vulns) => {
-            const found = vulns.find((v) => v.id === id);
-            if (found) {
-              setVuln(found);
-              setIsDocMode(false);
-            } else {
-              setError('Vulnerability not found');
-            }
-          })
-          .catch(() => setError('Failed to load vulnerability'));
-      })
+        return docsApi.getVulnerabilities().then((vulns) => {
+          const found = vulns.find((v) => v.id === id);
+          if (found) {
+            setVuln(found);
+            setIsDocMode(false);
+          } else {
+            throw new Error('Vulnerability not found');
+          }
+        });
+      });
+
+    // Always load compare data (works in both modes)
+    const loadCompare = docsApi.getCompare(id).then(setCompareData).catch(() => null);
+
+    Promise.all([loadVuln, loadCompare])
+      .catch(() => setError('Failed to load vulnerability'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -174,24 +189,6 @@ export default function ChallengeDetail() {
             </div>
           </div>
 
-          {/* Code comparison */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
-            <h2 className="text-xl font-bold mb-3">Code Comparison</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-red-400 mb-2">❌ Vulnerable Code</h3>
-                <pre className="code-block text-xs whitespace-pre-wrap text-red-300">
-                  {detail.vulnerable_code}
-                </pre>
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-green-400 mb-2">✅ Secure Code</h3>
-                <pre className="code-block text-xs whitespace-pre-wrap text-green-300">
-                  {detail.secure_code}
-                </pre>
-              </div>
-            </div>
-          </div>
 
           {/* Remediation */}
           <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
@@ -235,11 +232,45 @@ export default function ChallengeDetail() {
               <h3 className="font-bold text-yellow-400">Challenge Mode</h3>
               <p className="text-sm text-slate-300">
                 Detailed exploitation information is hidden. Set{' '}
-                <code className="bg-slate-700 px-1 rounded">VULNAPI_MODE=documentation</code> to see
+                <code className="bg-slate-700 px-1 rounded">DOJO_MODE=documentation</code> to see
                 full details.
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Code comparison - Available in BOTH modes */}
+      {compareData && (
+        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 mb-6">
+          <h2 className="text-xl font-bold mb-2">Code Comparison</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            <span className="text-yellow-400">💡 Key difference:</span> {compareData.key_difference}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-red-400 mb-2">❌ Vulnerable Code</h3>
+              <pre className="code-block text-xs whitespace-pre-wrap text-red-300">
+                {compareData.vulnerable_code}
+              </pre>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-green-400 mb-2">✅ Secure Code</h3>
+              <pre className="code-block text-xs whitespace-pre-wrap text-green-300">
+                {compareData.secure_code}
+              </pre>
+            </div>
+          </div>
+          {compareData.remediation && compareData.remediation.length > 0 && !isDocMode && (
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <h3 className="text-sm font-semibold text-slate-400 mb-2">Remediation Tips</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
+                {compareData.remediation.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

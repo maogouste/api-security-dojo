@@ -121,6 +121,70 @@ func DocsVulnerabilityHandler(c *gin.Context) {
 	c.JSON(404, gin.H{"detail": fmt.Sprintf("Vulnerability %s not found", id)})
 }
 
+// Key differences for each vulnerability (educational summaries)
+var keyDifferences = map[string]string{
+	"V01": "Add authorization check: verify user owns the resource or has admin role",
+	"V02": "Use strong secrets from environment + generic error messages",
+	"V03": "Use response models (DTOs) to filter sensitive fields",
+	"V04": "Implement rate limiting with sliding window or token bucket",
+	"V05": "Whitelist allowed fields, never bind request directly to model",
+	"V06": "Use parameterized queries, never concatenate user input into SQL",
+	"V07": "Validate input strictly, use safe APIs instead of shell execution",
+	"V08": "Configure CORS properly, disable debug endpoints in production",
+	"V09": "Deprecate and remove old API versions, apply same security controls",
+	"V10": "Log security events, implement alerting on suspicious patterns",
+	"G01": "Disable introspection in production",
+	"G02": "Set query depth limit: max_depth=10",
+	"G03": "Limit batch size and implement query cost analysis",
+	"G04": "Disable field suggestions in production errors",
+	"G05": "Add authorization checks to all resolvers",
+}
+
+// DocsCompareListHandler lists all code comparisons
+func DocsCompareListHandler(c *gin.Context) {
+	vulns := loadVulnerabilities()
+	var result []gin.H
+
+	for _, v := range vulns {
+		vm := v.(map[string]interface{})
+		id := vm["id"].(string)
+		result = append(result, gin.H{
+			"id":             id,
+			"name":           vm["name"],
+			"key_difference": keyDifferences[id],
+		})
+	}
+	c.JSON(200, result)
+}
+
+// DocsCompareHandler compares vulnerable vs secure code
+func DocsCompareHandler(c *gin.Context) {
+	id := c.Param("id")
+	vulns := loadVulnerabilities()
+
+	for _, v := range vulns {
+		vm := v.(map[string]interface{})
+		if vm["id"].(string) == id {
+			keyDiff := keyDifferences[id]
+			if keyDiff == "" {
+				keyDiff = "See secure_code for the fix"
+			}
+			c.JSON(200, gin.H{
+				"id":              id,
+				"name":            vm["name"],
+				"vulnerable_code": vm["vulnerable_code"],
+				"secure_code":     vm["secure_code"],
+				"key_difference":  keyDiff,
+				"remediation":     vm["remediation"],
+				"owasp":           vm["owasp"],
+				"cwe":             vm["cwe"],
+			})
+			return
+		}
+	}
+	c.JSON(404, gin.H{"detail": fmt.Sprintf("Vulnerability %s not found", id)})
+}
+
 func loadVulnerabilities() []interface{} {
 	data, err := os.ReadFile("vulnerabilities.json")
 	if err != nil {

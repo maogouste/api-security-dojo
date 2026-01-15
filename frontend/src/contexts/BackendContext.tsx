@@ -44,6 +44,13 @@ export const BACKENDS: Backend[] = [
     language: 'Java',
     icon: '☕',
   },
+  {
+    id: 'rust',
+    name: 'Actix-web',
+    baseUrl: 'http://localhost:3006',
+    language: 'Rust',
+    icon: '🦀',
+  },
 ];
 
 interface BackendContextType {

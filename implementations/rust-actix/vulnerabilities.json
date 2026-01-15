@@ -1,0 +1,520 @@
+{
+  "version": "1.0.0",
+  "vulnerabilities": [
+    {
+      "id": "V01",
+      "name": "Broken Object Level Authorization (BOLA)",
+      "category": "authorization",
+      "severity": "high",
+      "owasp": "API1:2023",
+      "cwe": "CWE-639",
+      "description": "The API endpoint exposes user data without verifying that the authenticated user has permission to access the requested resource. By manipulating the user ID in the URL, an attacker can access other users' data.",
+      "vulnerable_endpoint": "GET /api/users/{id}",
+      "exploitation": {
+        "steps": [
+          "Authenticate as a regular user (e.g., john/password123)",
+          "Note your own user ID from /api/users/me",
+          "Change the ID in the URL to access other users: /api/users/1",
+          "Access sensitive data from other users including SSN and credit cards"
+        ],
+        "example_request": "GET /api/users/1\nAuthorization: Bearer <your_token>",
+        "example_response": "{\n  \"id\": 1,\n  \"username\": \"admin\",\n  \"ssn\": \"123-45-6789\",\n  \"credit_card\": \"4111-1111-1111-1111\"\n}"
+      },
+      "vulnerable_code": "@router.get(\"/users/{user_id}\")\nasync def get_user(user_id: int, current_user: User = Depends(get_current_user)):\n    # VULNERABLE: No check if current_user.id == user_id\n    user = await db.get(User, user_id)\n    return user",
+      "secure_code": "@router.get(\"/users/{user_id}\")\nasync def get_user(user_id: int, current_user: User = Depends(get_current_user)):\n    # SECURE: Verify ownership or admin role\n    if current_user.id != user_id and current_user.role != \"admin\":\n        raise HTTPException(status_code=403, detail=\"Access denied\")\n    user = await db.get(User, user_id)\n    return user",
+      "remediation": [
+        "Always verify that the authenticated user has permission to access the requested resource",
+        "Implement object-level authorization checks in every endpoint",
+        "Use the principle of least privilege",
+        "Consider using UUIDs instead of sequential IDs to make enumeration harder"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/",
+        "https://cwe.mitre.org/data/definitions/639.html"
+      ],
+      "flag": "VULNAPI{bola_user_data_exposed}"
+    },
+    {
+      "id": "V02",
+      "name": "Broken Authentication",
+      "category": "authentication",
+      "severity": "critical",
+      "owasp": "API2:2023",
+      "cwe": "CWE-287",
+      "description": "The API uses a weak JWT secret that can be cracked, allowing attackers to forge valid tokens. Additionally, error messages reveal whether a username exists, enabling user enumeration.",
+      "vulnerable_endpoint": "POST /api/login",
+      "exploitation": {
+        "steps": [
+          "Capture a valid JWT token from login",
+          "Decode the token (base64) to see the header and payload",
+          "Note the algorithm (HS256) and attempt to crack the secret",
+          "The secret 'vulnerable-secret-key-change-in-production' is weak",
+          "Forge a new token with admin privileges"
+        ],
+        "example_request": "POST /api/login\n{\"username\": \"john\", \"password\": \"password123\"}",
+        "example_response": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"token_type\": \"bearer\"\n}"
+      },
+      "vulnerable_code": "# config.py\nSECRET_KEY = \"vulnerable-secret-key-change-in-production\"  # Weak!\n\n# auth.py - Different errors reveal user existence\nif not user:\n    raise HTTPException(detail=\"User not found\")  # Reveals user doesn't exist\nif not verify_password(password, user.password_hash):\n    raise HTTPException(detail=\"Incorrect password\")  # Reveals user exists",
+      "secure_code": "# config.py\nSECRET_KEY = os.environ.get(\"JWT_SECRET\")  # Strong, from environment\nif not SECRET_KEY or len(SECRET_KEY) < 32:\n    raise ValueError(\"JWT_SECRET must be at least 32 characters\")\n\n# auth.py - Generic error message\nif not user or not verify_password(password, user.password_hash):\n    raise HTTPException(detail=\"Invalid credentials\")  # Same message for both cases",
+      "remediation": [
+        "Use a strong, randomly generated secret key (at least 256 bits)",
+        "Store secrets in environment variables, never in code",
+        "Use generic error messages that don't reveal user existence",
+        "Implement account lockout after failed attempts",
+        "Consider using asymmetric algorithms (RS256) for JWT"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/",
+        "https://cwe.mitre.org/data/definitions/287.html"
+      ],
+      "flag": "VULNAPI{jwt_weak_secret_cracked}"
+    },
+    {
+      "id": "V03",
+      "name": "Excessive Data Exposure",
+      "category": "data",
+      "severity": "high",
+      "owasp": "API3:2023",
+      "cwe": "CWE-213",
+      "description": "The API returns more data than necessary, including sensitive fields like SSN, credit card numbers, and internal notes. The client is expected to filter the data, but attackers can see everything.",
+      "vulnerable_endpoint": "GET /api/users/me",
+      "exploitation": {
+        "steps": [
+          "Authenticate as any user",
+          "Request your own profile at /api/users/me",
+          "Observe that sensitive fields are returned: ssn, credit_card, secret_note, api_key",
+          "The flag is hidden in the internal_notes of products"
+        ],
+        "example_request": "GET /api/users/me\nAuthorization: Bearer <token>",
+        "example_response": "{\n  \"id\": 2,\n  \"username\": \"john\",\n  \"ssn\": \"987-65-4321\",\n  \"credit_card\": \"5500-0000-0000-0004\",\n  \"secret_note\": \"John's private notes\"\n}"
+      },
+      "vulnerable_code": "# Returning entire model with all fields\n@router.get(\"/users/me\")\nasync def get_current_user_profile(current_user: User):\n    return current_user  # Exposes ALL fields including sensitive ones",
+      "secure_code": "# Using a response model to filter fields\nclass UserPublicResponse(BaseModel):\n    id: int\n    username: str\n    email: str\n    role: str\n\n@router.get(\"/users/me\", response_model=UserPublicResponse)\nasync def get_current_user_profile(current_user: User):\n    return current_user  # Only fields in UserPublicResponse are returned",
+      "remediation": [
+        "Never return raw database models directly",
+        "Use response models/DTOs to explicitly define returned fields",
+        "Apply the principle of least privilege to data exposure",
+        "Review API responses for sensitive data leakage",
+        "Implement field-level access control where needed"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/",
+        "https://cwe.mitre.org/data/definitions/213.html"
+      ],
+      "flag": "VULNAPI{exposure_internal_data_leak}"
+    },
+    {
+      "id": "V04",
+      "name": "Lack of Rate Limiting",
+      "category": "availability",
+      "severity": "medium",
+      "owasp": "API4:2023",
+      "cwe": "CWE-770",
+      "description": "The login endpoint has no rate limiting, allowing unlimited authentication attempts. This enables brute force attacks against user passwords.",
+      "vulnerable_endpoint": "POST /api/login",
+      "exploitation": {
+        "steps": [
+          "Target a known username (e.g., 'admin' or 'john')",
+          "Send multiple login attempts with different passwords",
+          "No rate limiting means unlimited attempts",
+          "Use a wordlist to brute force the password"
+        ],
+        "example_request": "# Brute force script\nfor password in wordlist:\n    response = requests.post('/api/login', \n        json={'username': 'admin', 'password': password})\n    if response.status_code == 200:\n        print(f'Found: {password}')",
+        "example_response": "# After many attempts, no blocking occurs\n# Weak passwords like 'admin123' can be found quickly"
+      },
+      "vulnerable_code": "# No rate limiting implemented\n@router.post(\"/login\")\nasync def login(credentials: LoginRequest):\n    user = await authenticate(credentials.username, credentials.password)\n    if not user:\n        raise HTTPException(status_code=401)\n    return create_token(user)",
+      "secure_code": "from slowapi import Limiter\nfrom slowapi.util import get_remote_address\n\nlimiter = Limiter(key_func=get_remote_address)\n\n@router.post(\"/login\")\n@limiter.limit(\"5/minute\")  # Max 5 attempts per minute\nasync def login(request: Request, credentials: LoginRequest):\n    user = await authenticate(credentials.username, credentials.password)\n    if not user:\n        # Also implement progressive delays and account lockout\n        raise HTTPException(status_code=401)\n    return create_token(user)",
+      "remediation": [
+        "Implement rate limiting on authentication endpoints",
+        "Use progressive delays after failed attempts",
+        "Implement account lockout after multiple failures",
+        "Consider CAPTCHA after several failed attempts",
+        "Monitor and alert on brute force patterns"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/",
+        "https://cwe.mitre.org/data/definitions/770.html"
+      ],
+      "flag": "VULNAPI{ratelimit_bruteforce_success}"
+    },
+    {
+      "id": "V05",
+      "name": "Mass Assignment",
+      "category": "authorization",
+      "severity": "high",
+      "owasp": "API6:2023",
+      "cwe": "CWE-915",
+      "description": "The user update endpoint accepts all fields from the request body without filtering, allowing users to modify fields they shouldn't have access to, such as 'role' or 'is_active'.",
+      "vulnerable_endpoint": "PUT /api/users/me",
+      "exploitation": {
+        "steps": [
+          "Authenticate as a regular user",
+          "Send a PUT request to /api/users/me",
+          "Include unauthorized fields: {\"role\": \"admin\"}",
+          "Your role is changed to admin, granting elevated privileges"
+        ],
+        "example_request": "PUT /api/users/me\nAuthorization: Bearer <token>\n\n{\"email\": \"newemail@test.com\", \"role\": \"admin\"}",
+        "example_response": "{\n  \"id\": 2,\n  \"username\": \"john\",\n  \"role\": \"admin\",\n  \"message\": \"User updated successfully\"\n}"
+      },
+      "vulnerable_code": "@router.put(\"/users/me\")\nasync def update_user(updates: dict, current_user: User):\n    # VULNERABLE: All fields from request are applied\n    for key, value in updates.items():\n        setattr(current_user, key, value)\n    await db.commit()\n    return current_user",
+      "secure_code": "class UserUpdateRequest(BaseModel):\n    email: Optional[str] = None\n    password: Optional[str] = None\n    # Note: 'role' and 'is_active' are NOT included\n\n@router.put(\"/users/me\")\nasync def update_user(updates: UserUpdateRequest, current_user: User):\n    # SECURE: Only allowed fields can be updated\n    update_data = updates.dict(exclude_unset=True)\n    for key, value in update_data.items():\n        setattr(current_user, key, value)\n    await db.commit()\n    return current_user",
+      "remediation": [
+        "Use explicit allowlists for updateable fields",
+        "Define strict input schemas that only include permitted fields",
+        "Never bind request data directly to database models",
+        "Validate and sanitize all input data",
+        "Implement separate endpoints for privileged operations"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/",
+        "https://cwe.mitre.org/data/definitions/915.html"
+      ],
+      "flag": "VULNAPI{mass_assignment_privilege_escalation}"
+    },
+    {
+      "id": "V06",
+      "name": "SQL Injection",
+      "category": "injection",
+      "severity": "critical",
+      "owasp": "API8:2023",
+      "cwe": "CWE-89",
+      "description": "The product search endpoint constructs SQL queries by concatenating user input directly, allowing attackers to inject malicious SQL code and extract or modify database contents.",
+      "vulnerable_endpoint": "GET /api/products?search=",
+      "exploitation": {
+        "steps": [
+          "Access the product search endpoint",
+          "Inject SQL via the search parameter",
+          "Use UNION-based injection to extract data from other tables",
+          "Example: search=' UNION SELECT id,username,password_hash,ssn,credit_card,secret_note,role,1,'a',1.0 FROM users--"
+        ],
+        "example_request": "GET /api/products?search=' OR 1=1--",
+        "example_response": "[\n  {\"id\": 1, \"name\": \"Laptop Pro X1\", ...},\n  {\"id\": 6, \"name\": \"Secret Product\", \"description\": \"VULNAPI{sqli_database_dumped}\"}\n]"
+      },
+      "vulnerable_code": "@router.get(\"/products\")\nasync def search_products(search: str = \"\"):\n    # VULNERABLE: String concatenation in SQL\n    query = f\"SELECT * FROM products WHERE name LIKE '%{search}%'\"\n    result = await db.execute(text(query))\n    return result.fetchall()",
+      "secure_code": "@router.get(\"/products\")\nasync def search_products(search: str = \"\"):\n    # SECURE: Parameterized query\n    query = select(Product).where(Product.name.ilike(f\"%{search}%\"))\n    # Or with raw SQL:\n    # query = text(\"SELECT * FROM products WHERE name LIKE :search\")\n    # result = await db.execute(query, {\"search\": f\"%{search}%\"})\n    result = await db.execute(query)\n    return result.scalars().all()",
+      "remediation": [
+        "Always use parameterized queries or prepared statements",
+        "Use an ORM that handles escaping automatically",
+        "Validate and sanitize all user input",
+        "Apply the principle of least privilege to database accounts",
+        "Implement Web Application Firewall (WAF) rules"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/",
+        "https://cwe.mitre.org/data/definitions/89.html",
+        "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+      ],
+      "flag": "VULNAPI{sqli_database_dumped}"
+    },
+    {
+      "id": "V07",
+      "name": "Command Injection",
+      "category": "injection",
+      "severity": "critical",
+      "owasp": "API8:2023",
+      "cwe": "CWE-78",
+      "description": "The ping tool endpoint passes user input directly to a shell command without sanitization, allowing attackers to execute arbitrary system commands on the server.",
+      "vulnerable_endpoint": "POST /api/tools/ping",
+      "exploitation": {
+        "steps": [
+          "Access the ping tool endpoint",
+          "Inject shell commands using command separators",
+          "Example payload: 127.0.0.1; cat /etc/passwd",
+          "Or use backticks: 127.0.0.1`whoami`"
+        ],
+        "example_request": "POST /api/tools/ping\n{\"host\": \"127.0.0.1; id; cat /etc/passwd\"}",
+        "example_response": "{\n  \"output\": \"PING 127.0.0.1...\\nuid=1000(user) gid=1000(user)\\nroot:x:0:0:root:/root:/bin/bash...\"\n}"
+      },
+      "vulnerable_code": "@router.post(\"/tools/ping\")\nasync def ping_host(request: PingRequest):\n    # VULNERABLE: Direct shell execution with user input\n    command = f\"ping -c 3 {request.host}\"\n    result = subprocess.run(command, shell=True, capture_output=True)\n    return {\"output\": result.stdout.decode()}",
+      "secure_code": "import shlex\nimport ipaddress\n\n@router.post(\"/tools/ping\")\nasync def ping_host(request: PingRequest):\n    # SECURE: Validate input and avoid shell\n    try:\n        # Validate it's a valid IP or hostname\n        ipaddress.ip_address(request.host)\n    except ValueError:\n        # If not IP, validate hostname format\n        if not re.match(r'^[a-zA-Z0-9.-]+$', request.host):\n            raise HTTPException(400, \"Invalid host format\")\n    \n    # Use array form to avoid shell injection\n    result = subprocess.run(\n        [\"ping\", \"-c\", \"3\", request.host],\n        capture_output=True,\n        shell=False  # Important: shell=False\n    )\n    return {\"output\": result.stdout.decode()}",
+      "remediation": [
+        "Never pass user input directly to shell commands",
+        "Use subprocess with shell=False and argument arrays",
+        "Validate and whitelist allowed input patterns",
+        "Use libraries instead of shell commands when possible",
+        "Run with minimal privileges (sandboxing, containers)"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/",
+        "https://cwe.mitre.org/data/definitions/78.html",
+        "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+      ],
+      "flag": "VULNAPI{cmd_injection_rce_achieved}"
+    },
+    {
+      "id": "V08",
+      "name": "Security Misconfiguration",
+      "category": "configuration",
+      "severity": "medium",
+      "owasp": "API7:2023",
+      "cwe": "CWE-16",
+      "description": "The API has multiple security misconfigurations: CORS allows all origins with credentials, security headers are missing, debug mode is enabled, and verbose error messages expose internal details.",
+      "vulnerable_endpoint": "* (All endpoints)",
+      "exploitation": {
+        "steps": [
+          "Check response headers - security headers are missing",
+          "CORS is configured with allow_origins=['*'] and allow_credentials=True",
+          "This allows any website to make authenticated requests",
+          "Debug mode exposes stack traces and internal information"
+        ],
+        "example_request": "# Check CORS\ncurl -I -X OPTIONS http://localhost:8000/api/users \\\n  -H 'Origin: https://evil.com' \\\n  -H 'Access-Control-Request-Method: GET'",
+        "example_response": "Access-Control-Allow-Origin: *\nAccess-Control-Allow-Credentials: true\n# Missing: X-Content-Type-Options, X-Frame-Options, CSP, etc."
+      },
+      "vulnerable_code": "# main.py - Vulnerable CORS configuration\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],  # Allows any origin\n    allow_credentials=True,  # With credentials!\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\n# No security headers middleware\n# Debug mode enabled in production",
+      "secure_code": "# main.py - Secure CORS configuration\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"https://trusted-domain.com\"],  # Specific origins\n    allow_credentials=True,\n    allow_methods=[\"GET\", \"POST\", \"PUT\", \"DELETE\"],\n    allow_headers=[\"Authorization\", \"Content-Type\"],\n)\n\n# Add security headers\n@app.middleware(\"http\")\nasync def add_security_headers(request, call_next):\n    response = await call_next(request)\n    response.headers[\"X-Content-Type-Options\"] = \"nosniff\"\n    response.headers[\"X-Frame-Options\"] = \"DENY\"\n    response.headers[\"X-XSS-Protection\"] = \"1; mode=block\"\n    response.headers[\"Strict-Transport-Security\"] = \"max-age=31536000\"\n    return response",
+      "remediation": [
+        "Configure CORS with specific allowed origins",
+        "Add security headers (X-Content-Type-Options, X-Frame-Options, CSP, HSTS)",
+        "Disable debug mode in production",
+        "Use generic error messages that don't expose internals",
+        "Regularly audit configuration against security benchmarks"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/",
+        "https://cwe.mitre.org/data/definitions/16.html",
+        "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html"
+      ],
+      "flag": "VULNAPI{misconfig_cors_headers_missing}"
+    },
+    {
+      "id": "V09",
+      "name": "Improper Assets Management",
+      "category": "inventory",
+      "severity": "medium",
+      "owasp": "API9:2023",
+      "cwe": "CWE-1059",
+      "description": "An old version of the API (v1) is still accessible and has weaker security controls than the current version. Legacy endpoints may lack authentication or have known vulnerabilities.",
+      "vulnerable_endpoint": "GET /api/v1/users",
+      "exploitation": {
+        "steps": [
+          "Discover that /api/v1/ endpoints exist",
+          "Access /api/v1/users without authentication",
+          "The legacy endpoint returns all users without auth checks",
+          "Compare with /api/users which requires authentication"
+        ],
+        "example_request": "GET /api/v1/users\n# No Authorization header needed!",
+        "example_response": "[\n  {\"id\": 1, \"username\": \"admin\", \"email\": \"admin@vulnapi.local\"},\n  {\"id\": 2, \"username\": \"john\", \"email\": \"john@example.com\"},\n  ...\n]"
+      },
+      "vulnerable_code": "# main.py - Legacy API still mounted\napp.include_router(users.router, prefix=\"/api\", tags=[\"Users\"])\napp.include_router(users.router_v1, prefix=\"/api/v1\", tags=[\"Users (Legacy)\"])\n\n# users.py - Legacy router without auth\nrouter_v1 = APIRouter()\n\n@router_v1.get(\"/users\")\nasync def get_users_legacy():\n    # No authentication required!\n    return await get_all_users()",
+      "secure_code": "# Remove or properly secure legacy endpoints\n# Option 1: Remove entirely\n# app.include_router(users.router_v1, ...)  # Commented out\n\n# Option 2: Add deprecation and auth\nrouter_v1 = APIRouter(deprecated=True)\n\n@router_v1.get(\"/users\")\nasync def get_users_legacy(current_user: User = Depends(get_current_user)):\n    # Log usage of deprecated endpoint\n    logger.warning(f\"Deprecated v1 API used by {current_user.username}\")\n    return await get_all_users()",
+      "remediation": [
+        "Maintain an inventory of all API endpoints and versions",
+        "Deprecate and remove old API versions on a schedule",
+        "Apply the same security controls to all API versions",
+        "Use API gateways to manage versioning and access",
+        "Monitor for usage of deprecated endpoints"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/",
+        "https://cwe.mitre.org/data/definitions/1059.html"
+      ],
+      "flag": "VULNAPI{version_legacy_api_exposed}"
+    },
+    {
+      "id": "V10",
+      "name": "Insufficient Logging & Monitoring",
+      "category": "monitoring",
+      "severity": "medium",
+      "owasp": "API10:2023",
+      "cwe": "CWE-778",
+      "description": "The API does not log security-relevant events such as failed login attempts, authorization failures, or suspicious activities. This makes it difficult to detect and respond to attacks.",
+      "vulnerable_endpoint": "* (All endpoints)",
+      "exploitation": {
+        "steps": [
+          "Perform multiple failed login attempts - no alerts triggered",
+          "Access unauthorized resources - no audit trail",
+          "Perform SQL injection attacks - no detection",
+          "Attacks go unnoticed due to lack of monitoring"
+        ],
+        "example_request": "# Multiple failed logins - no logging\nfor i in range(100):\n    requests.post('/api/login', json={'username': 'admin', 'password': f'guess{i}'})",
+        "example_response": "# No security alerts\n# No audit logs of failed attempts\n# Attacker can continue undetected"
+      },
+      "vulnerable_code": "@router.post(\"/login\")\nasync def login(credentials: LoginRequest):\n    user = await authenticate(credentials.username, credentials.password)\n    if not user:\n        # No logging of failed attempt\n        raise HTTPException(status_code=401)\n    # No logging of successful login either\n    return create_token(user)",
+      "secure_code": "import logging\nfrom datetime import datetime\n\nsecurity_logger = logging.getLogger(\"security\")\n\n@router.post(\"/login\")\nasync def login(request: Request, credentials: LoginRequest):\n    client_ip = request.client.host\n    user = await authenticate(credentials.username, credentials.password)\n    \n    if not user:\n        security_logger.warning(\n            f\"Failed login attempt for user '{credentials.username}' from {client_ip}\"\n        )\n        # Also store in database for analysis\n        await log_security_event(\"LOGIN_FAILED\", credentials.username, client_ip)\n        raise HTTPException(status_code=401)\n    \n    security_logger.info(f\"Successful login for user '{user.username}' from {client_ip}\")\n    await log_security_event(\"LOGIN_SUCCESS\", user.username, client_ip)\n    return create_token(user)",
+      "remediation": [
+        "Log all authentication attempts (success and failure)",
+        "Log authorization failures and suspicious access patterns",
+        "Include relevant context: timestamp, user, IP, action, resource",
+        "Set up alerting for security anomalies",
+        "Implement centralized log management (SIEM)",
+        "Ensure logs are tamper-proof and retained appropriately"
+      ],
+      "references": [
+        "https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/",
+        "https://cwe.mitre.org/data/definitions/778.html",
+        "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+      ],
+      "flag": "VULNAPI{logging_blind_attack_undetected}"
+    },
+    {
+      "id": "G01",
+      "name": "GraphQL Introspection Exposed",
+      "category": "graphql",
+      "severity": "medium",
+      "owasp": "API3:2023",
+      "cwe": "CWE-200",
+      "description": "GraphQL introspection is enabled in production, allowing attackers to discover the entire API schema including types, fields, queries, and mutations. This provides a roadmap for further attacks.",
+      "vulnerable_endpoint": "POST /graphql/",
+      "exploitation": {
+        "steps": [
+          "Send an introspection query to the GraphQL endpoint",
+          "Receive the complete schema with all types and fields",
+          "Identify sensitive fields and operations",
+          "Plan targeted attacks based on discovered schema"
+        ],
+        "example_request": "POST /graphql/\n{\"query\": \"{ __schema { types { name fields { name type { name } } } } }\"}",
+        "example_response": "{\n  \"data\": {\n    \"__schema\": {\n      \"types\": [\n        {\"name\": \"UserType\", \"fields\": [{\"name\": \"ssn\"}, {\"name\": \"creditCard\"}]},\n        ...\n      ]\n    }\n  }\n}"
+      },
+      "vulnerable_code": "# schema.py - Introspection enabled by default\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n    # No introspection control\n)\n\ndef create_graphql_router():\n    return GraphQLRouter(\n        schema,\n        graphiql=True,  # GraphiQL UI also exposed\n    )",
+      "secure_code": "from strawberry.extensions import DisableIntrospection\n\n# Disable introspection in production\nextensions = []\nif not settings.debug:\n    extensions.append(DisableIntrospection())\n\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n    extensions=extensions,\n)\n\ndef create_graphql_router():\n    return GraphQLRouter(\n        schema,\n        graphiql=settings.debug,  # Only in development\n    )",
+      "remediation": [
+        "Disable introspection in production environments",
+        "Disable GraphiQL/GraphQL Playground in production",
+        "Use allowlisting for permitted queries if possible",
+        "Implement query complexity analysis",
+        "Monitor for introspection attempts"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html",
+        "https://cwe.mitre.org/data/definitions/200.html"
+      ],
+      "flag": "VULNAPI{graphql_introspection_schema_leaked}"
+    },
+    {
+      "id": "G02",
+      "name": "GraphQL Nested Queries (DoS)",
+      "category": "graphql",
+      "severity": "high",
+      "owasp": "API4:2023",
+      "cwe": "CWE-400",
+      "description": "The GraphQL API has no limits on query depth or complexity. Attackers can craft deeply nested queries that cause exponential resource consumption, leading to denial of service.",
+      "vulnerable_endpoint": "POST /graphql/",
+      "exploitation": {
+        "steps": [
+          "Identify circular relationships in the schema (user -> orders -> user)",
+          "Craft a deeply nested query exploiting these relationships",
+          "Each level multiplies the database queries",
+          "Server resources are exhausted"
+        ],
+        "example_request": "POST /graphql/\n{\"query\": \"{ users { orders { user { orders { user { orders { user { username } } } } } } } }\"}",
+        "example_response": "# Server becomes slow or unresponsive\n# Database connections exhausted\n# Memory usage spikes"
+      },
+      "vulnerable_code": "# No depth or complexity limits\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n    # Missing: extensions for depth/complexity limiting\n)",
+      "secure_code": "from graphql import GraphQLError\nfrom strawberry.extensions import QueryDepthLimiter\n\nclass DepthLimitExtension:\n    def on_operation(self):\n        # Custom depth checking\n        pass\n\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n    extensions=[\n        QueryDepthLimiter(max_depth=5),  # Limit query depth\n        # Also consider complexity analysis\n    ],\n)",
+      "remediation": [
+        "Implement query depth limiting (max 5-10 levels)",
+        "Implement query complexity analysis",
+        "Set timeouts for query execution",
+        "Use DataLoader to batch and cache database queries",
+        "Implement rate limiting per client"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html",
+        "https://cwe.mitre.org/data/definitions/400.html"
+      ],
+      "flag": "VULNAPI{graphql_depth_resource_exhaustion}"
+    },
+    {
+      "id": "G03",
+      "name": "GraphQL Batching Attack",
+      "category": "graphql",
+      "severity": "medium",
+      "owasp": "API4:2023",
+      "cwe": "CWE-770",
+      "description": "The GraphQL endpoint accepts arrays of operations in a single request without limits. Attackers can batch hundreds of queries or mutations, bypassing rate limiting that counts requests rather than operations.",
+      "vulnerable_endpoint": "POST /graphql/",
+      "exploitation": {
+        "steps": [
+          "Send an array of operations instead of a single query",
+          "Each operation counts as one request for rate limiting",
+          "Batch 100 login attempts in one HTTP request",
+          "Effectively bypass per-request rate limits"
+        ],
+        "example_request": "POST /graphql/\n[\n  {\"query\": \"mutation { login(username: \\\"admin\\\", password: \\\"pass1\\\") { accessToken } }\"},\n  {\"query\": \"mutation { login(username: \\\"admin\\\", password: \\\"pass2\\\") { accessToken } }\"},\n  ... // 100 more attempts\n]",
+        "example_response": "[\n  {\"errors\": [{\"message\": \"Incorrect password\"}]},\n  {\"errors\": [{\"message\": \"Incorrect password\"}]},\n  {\"data\": {\"login\": {\"accessToken\": \"...\"}}},  // Found!\n  ...\n]"
+      },
+      "vulnerable_code": "# Batching enabled without limits\n@router.post(\"/\")\nasync def graphql_post(request: Request):\n    body = await request.json()\n    \n    if isinstance(body, list):\n        # Process all operations without limit\n        results = []\n        for operation in body:\n            result = await schema.execute(operation[\"query\"])\n            results.append(result)\n        return results",
+      "secure_code": "MAX_BATCH_SIZE = 10\n\n@router.post(\"/\")\nasync def graphql_post(request: Request):\n    body = await request.json()\n    \n    if isinstance(body, list):\n        if len(body) > MAX_BATCH_SIZE:\n            return JSONResponse(\n                {\"error\": f\"Batch size exceeds limit of {MAX_BATCH_SIZE}\"},\n                status_code=400\n            )\n        # Or disable batching entirely:\n        # return JSONResponse({\"error\": \"Batching not allowed\"}, status_code=400)\n    \n    # Process with limits...",
+      "remediation": [
+        "Disable batching if not needed",
+        "Limit batch size to a reasonable number (e.g., 10)",
+        "Apply rate limiting per operation, not per request",
+        "Monitor for batching abuse patterns",
+        "Implement query cost analysis across batched operations"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html",
+        "https://cwe.mitre.org/data/definitions/770.html"
+      ],
+      "flag": "VULNAPI{graphql_batch_rate_limit_bypass}"
+    },
+    {
+      "id": "G04",
+      "name": "GraphQL Field Suggestions",
+      "category": "graphql",
+      "severity": "low",
+      "owasp": "API3:2023",
+      "cwe": "CWE-209",
+      "description": "When querying non-existent fields, GraphQL returns helpful error messages that suggest similar valid field names. This aids attackers in enumerating the schema even if introspection is disabled.",
+      "vulnerable_endpoint": "POST /graphql/",
+      "exploitation": {
+        "steps": [
+          "Query a field with a slight typo: 'userna' instead of 'username'",
+          "Error message reveals: 'Did you mean username?'",
+          "Systematically probe for fields to enumerate the schema",
+          "Works even if introspection is disabled"
+        ],
+        "example_request": "POST /graphql/\n{\"query\": \"{ users { userna } }\"}",
+        "example_response": "{\n  \"errors\": [{\n    \"message\": \"Cannot query field 'userna' on type 'UserType'. Did you mean 'username'?\"\n  }]\n}"
+      },
+      "vulnerable_code": "# Default Strawberry/GraphQL behavior includes suggestions\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n    # Field suggestions enabled by default in error messages\n)",
+      "secure_code": "# Custom error formatter to remove suggestions\ndef format_error(error: GraphQLError) -> dict:\n    formatted = error.formatted\n    # Remove suggestion from message\n    message = formatted.get(\"message\", \"\")\n    if \"Did you mean\" in message:\n        message = message.split(\"Did you mean\")[0].strip()\n        formatted[\"message\"] = message\n    return formatted\n\nschema = strawberry.Schema(\n    query=Query,\n    mutation=Mutation,\n)\n\n# Apply in router\n@router.post(\"/\")\nasync def graphql_post(request: Request):\n    result = await schema.execute(query)\n    if result.errors:\n        result.errors = [format_error(e) for e in result.errors]",
+      "remediation": [
+        "Customize error messages to remove field suggestions",
+        "Use generic error messages in production",
+        "Consider query allowlisting for sensitive APIs",
+        "Monitor for enumeration attempts",
+        "Combine with introspection disabling"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html",
+        "https://cwe.mitre.org/data/definitions/209.html"
+      ],
+      "flag": "VULNAPI{graphql_suggestions_field_enumeration}"
+    },
+    {
+      "id": "G05",
+      "name": "GraphQL Authorization Bypass",
+      "category": "graphql",
+      "severity": "critical",
+      "owasp": "API1:2023",
+      "cwe": "CWE-862",
+      "description": "GraphQL resolvers do not implement authorization checks, allowing unauthenticated users to query sensitive data and perform privileged mutations. Authentication is optional and not enforced.",
+      "vulnerable_endpoint": "POST /graphql/",
+      "exploitation": {
+        "steps": [
+          "Query the users endpoint without authentication",
+          "Receive all user data including SSN and credit cards",
+          "Perform mutations like updateUser without auth",
+          "Escalate privileges by setting role to 'admin'"
+        ],
+        "example_request": "POST /graphql/\n{\"query\": \"{ users { id username ssn creditCard apiKey } }\"}",
+        "example_response": "{\n  \"data\": {\n    \"users\": [\n      {\"id\": 1, \"username\": \"admin\", \"ssn\": \"123-45-6789\", \"creditCard\": \"4111-1111-1111-1111\"},\n      ...\n    ]\n  }\n}"
+      },
+      "vulnerable_code": "@strawberry.type\nclass Query:\n    @strawberry.field\n    async def users(self, info: Info) -> List[UserType]:\n        # VULNERABLE: No authentication check\n        async with async_session_maker() as db:\n            result = await db.execute(select(User))\n            return [UserType.from_orm(u) for u in result.scalars()]",
+      "secure_code": "@strawberry.type\nclass Query:\n    @strawberry.field\n    async def users(self, info: Info) -> List[UserType]:\n        # SECURE: Require authentication and admin role\n        context = info.context\n        if not context.is_authenticated:\n            raise Exception(\"Authentication required\")\n        if context.current_user.role != \"admin\":\n            raise Exception(\"Admin access required\")\n        \n        async with async_session_maker() as db:\n            result = await db.execute(select(User))\n            return [UserType.from_orm(u) for u in result.scalars()]\n\n    @strawberry.field\n    async def me(self, info: Info) -> UserType:\n        # Users can only see their own data\n        context = info.context\n        if not context.is_authenticated:\n            raise Exception(\"Authentication required\")\n        return UserType.from_orm(context.current_user)",
+      "remediation": [
+        "Implement authentication checks in all resolvers",
+        "Use middleware or decorators for consistent auth enforcement",
+        "Apply object-level authorization (users can only see their data)",
+        "Implement field-level authorization for sensitive fields",
+        "Audit all queries and mutations for proper access control"
+      ],
+      "references": [
+        "https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html",
+        "https://cwe.mitre.org/data/definitions/862.html"
+      ],
+      "flag": "VULNAPI{graphql_authz_sensitive_data_exposed}"
+    }
+  ]
+}

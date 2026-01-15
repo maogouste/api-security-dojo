@@ -110,6 +110,64 @@ public class DocsController {
             .orElse(ResponseEntity.status(404).body(Map.of("detail", "Vulnerability " + id + " not found")));
     }
 
+    // Key differences for each vulnerability (educational summaries)
+    private static final Map<String, String> KEY_DIFFERENCES = Map.ofEntries(
+        Map.entry("V01", "Add authorization check: verify user owns the resource or has admin role"),
+        Map.entry("V02", "Use strong secrets from environment + generic error messages"),
+        Map.entry("V03", "Use response models (DTOs) to filter sensitive fields"),
+        Map.entry("V04", "Implement rate limiting with sliding window or token bucket"),
+        Map.entry("V05", "Whitelist allowed fields, never bind request directly to model"),
+        Map.entry("V06", "Use parameterized queries, never concatenate user input into SQL"),
+        Map.entry("V07", "Validate input strictly, use safe APIs instead of shell execution"),
+        Map.entry("V08", "Configure CORS properly, disable debug endpoints in production"),
+        Map.entry("V09", "Deprecate and remove old API versions, apply same security controls"),
+        Map.entry("V10", "Log security events, implement alerting on suspicious patterns"),
+        Map.entry("G01", "Disable introspection in production"),
+        Map.entry("G02", "Set query depth limit: max_depth=10"),
+        Map.entry("G03", "Limit batch size and implement query cost analysis"),
+        Map.entry("G04", "Disable field suggestions in production errors"),
+        Map.entry("G05", "Add authorization checks to all resolvers")
+    );
+
+    /**
+     * Compare vulnerable vs secure code.
+     * Available in BOTH challenge and documentation modes.
+     */
+    @GetMapping("/compare/{id}")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> compareCode(@PathVariable String id) {
+        return loadVulnerabilities().stream()
+            .filter(v -> id.equals(v.get("id")))
+            .findFirst()
+            .map(v -> {
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("id", v.get("id"));
+                result.put("name", v.get("name"));
+                result.put("vulnerable_code", v.get("vulnerable_code"));
+                result.put("secure_code", v.get("secure_code"));
+                result.put("key_difference", KEY_DIFFERENCES.getOrDefault(id, "See secure_code for the fix"));
+                result.put("remediation", v.get("remediation"));
+                result.put("owasp", v.get("owasp"));
+                result.put("cwe", v.get("cwe"));
+                return ResponseEntity.ok(result);
+            })
+            .orElse(ResponseEntity.status(404).body(Map.of("detail", "Vulnerability " + id + " not found")));
+    }
+
+    /**
+     * List all available code comparisons.
+     */
+    @GetMapping("/compare")
+    public List<Map<String, Object>> listComparisons() {
+        return loadVulnerabilities().stream()
+            .map(v -> Map.<String, Object>of(
+                "id", v.get("id"),
+                "name", v.get("name"),
+                "key_difference", KEY_DIFFERENCES.getOrDefault((String)v.get("id"), "")
+            ))
+            .toList();
+    }
+
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> loadVulnerabilities() {
         try {

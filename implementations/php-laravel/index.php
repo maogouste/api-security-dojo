@@ -238,6 +238,14 @@ try {
             DocsHandler::vulnerability($m[1]);
             break;
 
+        case $uri === '/api/docs/compare' && $method === 'GET':
+            DocsHandler::compareList();
+            break;
+
+        case preg_match('#^/api/docs/compare/([A-Z]\d+)$#', $uri, $m):
+            DocsHandler::compare($m[1]);
+            break;
+
         // GraphQL
         case $uri === '/graphql' || $uri === '/graphql/':
             GraphQLHandler::handle($db);

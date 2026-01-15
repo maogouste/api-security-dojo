@@ -1,0 +1,26 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Current User
+
+  ## V03: Excessive Data Exposure
+  Response includes sensitive fields:
+  - ssn
+  - credit_card
+  - secret_note (contains flag!)
+  - api_key
+}

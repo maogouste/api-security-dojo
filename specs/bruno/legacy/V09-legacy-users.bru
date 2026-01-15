@@ -1,0 +1,27 @@
+meta {
+  name: V09 Legacy API - List Users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users
+  body: none
+  auth: none
+}
+
+docs {
+  # V09: Improper Assets Management - Legacy API
+
+  ## Vulnerability
+  Old API version still accessible without authentication.
+  Exposes password hashes!
+
+  ## Exploit
+  1. Access /api/v1/users (no auth required)
+  2. Get all users with password_hash field
+  3. Crack hashes offline
+
+  ## Flag
+  VULNAPI{version_legacy_api_exposed}
+}

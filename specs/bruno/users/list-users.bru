@@ -1,0 +1,22 @@
+meta {
+  name: List Users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/users
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # List Users
+
+  ## V03: Excessive Data Exposure
+  Returns all users with sensitive data (SSN, credit cards).
+}

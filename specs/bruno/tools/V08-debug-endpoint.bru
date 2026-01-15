@@ -1,0 +1,28 @@
+meta {
+  name: V08 Debug Endpoint
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/tools/debug
+  body: none
+  auth: none
+}
+
+docs {
+  # V08: Security Misconfiguration - Debug Endpoint
+
+  ## Vulnerability
+  Debug endpoint exposed without authentication.
+
+  ## Exploit
+  Access /api/tools/debug to get:
+  - Environment variables
+  - Server configuration
+  - Internal paths
+  - Potentially secrets
+
+  ## Flag
+  VULNAPI{misconfig_cors_headers_missing}
+}

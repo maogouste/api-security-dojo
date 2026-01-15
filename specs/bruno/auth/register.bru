@@ -1,0 +1,28 @@
+meta {
+  name: Register
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "newuser",
+    "email": "newuser@example.com",
+    "password": "weak"
+  }
+}
+
+docs {
+  # Register
+
+  Create a new user account.
+
+  ## V02: No password strength validation
+  Try registering with weak passwords like "123" or "a".
+}

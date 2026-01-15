@@ -1,0 +1,19 @@
+meta {
+  name: V09 Legacy API - Get User
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users/1
+  body: none
+  auth: none
+}
+
+docs {
+  # V09: Legacy API - User Detail
+
+  ## Vulnerability
+  No authentication on legacy endpoint.
+  Returns full user data including password hash.
+}

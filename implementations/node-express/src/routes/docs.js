@@ -166,4 +166,68 @@ router.get('/vulnerabilities/:id', checkDocumentationMode, (req, res) => {
   res.json(vuln);
 });
 
+// Key differences for each vulnerability (educational summaries)
+const KEY_DIFFERENCES = {
+  V01: 'Add authorization check: verify user owns the resource or has admin role',
+  V02: 'Use strong secrets from environment + generic error messages',
+  V03: 'Use response models (DTOs) to filter sensitive fields',
+  V04: 'Implement rate limiting with sliding window or token bucket',
+  V05: 'Whitelist allowed fields, never bind request directly to model',
+  V06: 'Use parameterized queries, never concatenate user input into SQL',
+  V07: 'Validate input strictly, use safe APIs instead of shell execution',
+  V08: 'Configure CORS properly, disable debug endpoints in production',
+  V09: 'Deprecate and remove old API versions, apply same security controls',
+  V10: 'Log security events, implement alerting on suspicious patterns',
+  G01: 'Disable introspection in production',
+  G02: 'Set query depth limit: max_depth=10',
+  G03: 'Limit batch size and implement query cost analysis',
+  G04: 'Disable field suggestions in production errors',
+  G05: 'Add authorization checks to all resolvers',
+};
+
+/**
+ * GET /api/docs/compare
+ * List all available code comparisons
+ */
+router.get('/compare', (req, res) => {
+  const data = loadVulnerabilities();
+  const vulnerabilities = data.vulnerabilities || [];
+
+  const result = vulnerabilities.map(v => ({
+    id: v.id,
+    name: v.name,
+    key_difference: KEY_DIFFERENCES[v.id] || '',
+  }));
+
+  res.json(result);
+});
+
+/**
+ * GET /api/docs/compare/:id
+ * Compare vulnerable vs secure code
+ * Available in BOTH challenge and documentation modes
+ */
+router.get('/compare/:id', (req, res) => {
+  const { id } = req.params;
+  const data = loadVulnerabilities();
+  const vulnerabilities = data.vulnerabilities || [];
+
+  const vuln = vulnerabilities.find(v => v.id === id);
+
+  if (!vuln) {
+    return res.status(404).json({ detail: `Vulnerability ${id} not found` });
+  }
+
+  res.json({
+    id: vuln.id,
+    name: vuln.name,
+    vulnerable_code: vuln.vulnerable_code,
+    secure_code: vuln.secure_code,
+    key_difference: KEY_DIFFERENCES[id] || 'See secure_code for the fix',
+    remediation: vuln.remediation,
+    owasp: vuln.owasp,
+    cwe: vuln.cwe,
+  });
+});
+
 export default router;

