@@ -12,15 +12,16 @@ services:
       - DOJO_MODE=${DOJO_MODE:-challenge}
     restart: unless-stopped
 
-  # Node.js/Express - port 3001
+  # Node.js/Express - port 3005
   express:
     build:
       context: ./implementations/node-express
       dockerfile: Dockerfile
     ports:
-      - "3001:3001"
+      - "3005:3005"
     environment:
       - DOJO_MODE=${DOJO_MODE:-challenge}
+      - PORT=3005
     restart: unless-stopped
 
   # Go/Gin - port 3002
@@ -56,6 +57,18 @@ services:
       - DOJO_MODE=${DOJO_MODE:-challenge}
     restart: unless-stopped
 
+  # Rust/Actix - port 3006
+  rust:
+    build:
+      context: ./implementations/rust-actix
+      dockerfile: Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      - DOJO_MODE=${DOJO_MODE:-challenge}
+      - PORT=3006
+    restart: unless-stopped
+
   # Frontend - port 3000
   frontend:
     build:
@@ -69,4 +82,5 @@ services:
       - go
       - php
       - java
+      - rust
     restart: unless-stopped
