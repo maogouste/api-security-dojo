@@ -23,6 +23,63 @@ import flagsRouter from './routes/flags.js';
 import docsRouter from './routes/docs.js';
 import graphqlSchema from './graphql/schema.js';
 
+/**
+ * Check if running in a production-like environment and warn/block.
+ * This application is INTENTIONALLY VULNERABLE and should NEVER
+ * be deployed in production environments.
+ */
+function checkProductionEnvironment() {
+  const indicators = {
+    'PRODUCTION': process.env.PRODUCTION,
+    'PROD': process.env.PROD,
+    'NODE_ENV=production': process.env.NODE_ENV === 'production' ? 'true' : null,
+    'ENVIRONMENT=production': process.env.ENVIRONMENT === 'production' ? 'true' : null,
+    'AWS_EXECUTION_ENV': process.env.AWS_EXECUTION_ENV,
+    'AWS_LAMBDA_FUNCTION_NAME': process.env.AWS_LAMBDA_FUNCTION_NAME,
+    'KUBERNETES_SERVICE_HOST': process.env.KUBERNETES_SERVICE_HOST,
+    'ECS_CONTAINER_METADATA_URI': process.env.ECS_CONTAINER_METADATA_URI,
+    'GOOGLE_CLOUD_PROJECT': process.env.GOOGLE_CLOUD_PROJECT,
+    'HEROKU_APP_NAME': process.env.HEROKU_APP_NAME,
+    'VERCEL': process.env.VERCEL,
+    'RENDER': process.env.RENDER,
+  };
+
+  const detected = Object.entries(indicators).filter(([_, v]) => v);
+
+  if (detected.length > 0) {
+    console.error(`
+================================================================================
+                    CRITICAL SECURITY WARNING
+================================================================================
+
+  API Security Dojo has detected a PRODUCTION-LIKE environment!
+
+  Detected indicators:`);
+    detected.forEach(([k, v]) => console.error(`    - ${k}: ${v}`));
+    console.error(`
+  THIS APPLICATION IS INTENTIONALLY VULNERABLE!
+  It contains security vulnerabilities by design for educational purposes.
+
+  DO NOT DEPLOY IN PRODUCTION - You WILL be compromised!
+
+================================================================================
+`);
+
+    if (process.env.DOJO_FORCE_START !== 'true') {
+      console.error('  To override this safety check (NOT RECOMMENDED), set:');
+      console.error('    DOJO_FORCE_START=true\n');
+      process.exit(1);
+    } else {
+      console.error('  WARNING: DOJO_FORCE_START=true detected.');
+      console.error('  Proceeding despite production environment detection.');
+      console.error('  YOU HAVE BEEN WARNED!\n');
+    }
+  }
+}
+
+// Check production environment before proceeding
+checkProductionEnvironment();
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const MODE = process.env.DOJO_MODE || 'challenge';

@@ -24,6 +24,76 @@ spl_autoload_register(function ($class) {
     }
 });
 
+/**
+ * Check if running in a production-like environment and block startup.
+ * This application is INTENTIONALLY VULNERABLE and should NEVER
+ * be deployed in production environments.
+ */
+function checkProductionEnvironment(): void {
+    $indicators = [];
+
+    $envVars = [
+        'PRODUCTION', 'PROD', 'AWS_EXECUTION_ENV', 'AWS_LAMBDA_FUNCTION_NAME',
+        'KUBERNETES_SERVICE_HOST', 'ECS_CONTAINER_METADATA_URI',
+        'GOOGLE_CLOUD_PROJECT', 'HEROKU_APP_NAME', 'VERCEL', 'RENDER'
+    ];
+
+    foreach ($envVars as $var) {
+        $value = getenv($var);
+        if ($value !== false && $value !== '') {
+            $indicators[$var] = $value;
+        }
+    }
+
+    if (getenv('NODE_ENV') === 'production') {
+        $indicators['NODE_ENV=production'] = 'true';
+    }
+    if (getenv('ENVIRONMENT') === 'production') {
+        $indicators['ENVIRONMENT=production'] = 'true';
+    }
+
+    if (!empty($indicators)) {
+        $message = <<<EOT
+
+================================================================================
+                    CRITICAL SECURITY WARNING
+================================================================================
+
+  API Security Dojo has detected a PRODUCTION-LIKE environment!
+
+  Detected indicators:
+
+EOT;
+        foreach ($indicators as $k => $v) {
+            $message .= "    - $k: $v\n";
+        }
+        $message .= <<<EOT
+
+  THIS APPLICATION IS INTENTIONALLY VULNERABLE!
+  It contains security vulnerabilities by design for educational purposes.
+
+  DO NOT DEPLOY IN PRODUCTION - You WILL be compromised!
+
+================================================================================
+
+EOT;
+        fwrite(STDERR, $message);
+
+        if (getenv('DOJO_FORCE_START') !== 'true') {
+            fwrite(STDERR, "  To override this safety check (NOT RECOMMENDED), set:\n");
+            fwrite(STDERR, "    DOJO_FORCE_START=true\n\n");
+            exit(1);
+        } else {
+            fwrite(STDERR, "  WARNING: DOJO_FORCE_START=true detected.\n");
+            fwrite(STDERR, "  Proceeding despite production environment detection.\n");
+            fwrite(STDERR, "  YOU HAVE BEEN WARNED!\n\n");
+        }
+    }
+}
+
+// Check production environment before proceeding
+checkProductionEnvironment();
+
 use ApiSecurityDojo\Config;
 use ApiSecurityDojo\Database;
 use ApiSecurityDojo\Auth;

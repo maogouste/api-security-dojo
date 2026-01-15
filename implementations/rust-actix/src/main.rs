@@ -26,10 +26,59 @@ mod graphql;
 
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer, HttpResponse, middleware::Logger};
-use log::info;
+use log::{info, error};
 
 use crate::db::{init_db, HealthResponse, ApiInfo};
 use crate::graphql::{create_schema, graphql_handler, graphql_playground, graphql_introspection_hint};
+
+/// Check if running in a production-like environment and block startup.
+/// This application is INTENTIONALLY VULNERABLE and should NEVER
+/// be deployed in production environments.
+fn check_production_environment() {
+    let indicators: Vec<(&str, Option<String>)> = vec![
+        ("PRODUCTION", std::env::var("PRODUCTION").ok()),
+        ("PROD", std::env::var("PROD").ok()),
+        ("NODE_ENV=production", std::env::var("NODE_ENV").ok().filter(|v| v == "production").map(|_| "true".to_string())),
+        ("ENVIRONMENT=production", std::env::var("ENVIRONMENT").ok().filter(|v| v == "production").map(|_| "true".to_string())),
+        ("AWS_EXECUTION_ENV", std::env::var("AWS_EXECUTION_ENV").ok()),
+        ("AWS_LAMBDA_FUNCTION_NAME", std::env::var("AWS_LAMBDA_FUNCTION_NAME").ok()),
+        ("KUBERNETES_SERVICE_HOST", std::env::var("KUBERNETES_SERVICE_HOST").ok()),
+        ("ECS_CONTAINER_METADATA_URI", std::env::var("ECS_CONTAINER_METADATA_URI").ok()),
+        ("GOOGLE_CLOUD_PROJECT", std::env::var("GOOGLE_CLOUD_PROJECT").ok()),
+        ("HEROKU_APP_NAME", std::env::var("HEROKU_APP_NAME").ok()),
+        ("VERCEL", std::env::var("VERCEL").ok()),
+        ("RENDER", std::env::var("RENDER").ok()),
+    ];
+
+    let detected: Vec<_> = indicators.into_iter()
+        .filter_map(|(k, v)| v.map(|val| (k, val)))
+        .collect();
+
+    if !detected.is_empty() {
+        eprintln!("\n================================================================================");
+        eprintln!("                    CRITICAL SECURITY WARNING");
+        eprintln!("================================================================================\n");
+        eprintln!("  API Security Dojo has detected a PRODUCTION-LIKE environment!\n");
+        eprintln!("  Detected indicators:");
+        for (k, v) in &detected {
+            eprintln!("    - {}: {}", k, v);
+        }
+        eprintln!("\n  THIS APPLICATION IS INTENTIONALLY VULNERABLE!");
+        eprintln!("  It contains security vulnerabilities by design for educational purposes.\n");
+        eprintln!("  DO NOT DEPLOY IN PRODUCTION - You WILL be compromised!\n");
+        eprintln!("================================================================================\n");
+
+        if std::env::var("DOJO_FORCE_START").ok().as_deref() != Some("true") {
+            eprintln!("  To override this safety check (NOT RECOMMENDED), set:");
+            eprintln!("    DOJO_FORCE_START=true\n");
+            std::process::exit(1);
+        } else {
+            error!("WARNING: DOJO_FORCE_START=true detected.");
+            error!("Proceeding despite production environment detection.");
+            error!("YOU HAVE BEEN WARNED!");
+        }
+    }
+}
 
 /// Health check endpoint
 async fn health() -> HttpResponse {
@@ -64,6 +113,9 @@ async fn main() -> std::io::Result<()> {
 
     // Load .env file if present
     dotenv::dotenv().ok();
+
+    // Check production environment before proceeding
+    check_production_environment();
 
     let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port: u16 = std::env::var("PORT")
@@ -130,7 +182,9 @@ async fn main() -> std::io::Result<()> {
             .route("/api/v1/reset-password", web::post().to(api::v1_reset_password))
             // GraphQL (G01-G05)
             .route("/graphql", web::post().to(graphql_handler))
+            .route("/graphql/", web::post().to(graphql_handler))
             .route("/graphql", web::get().to(graphql_introspection_hint))
+            .route("/graphql/", web::get().to(graphql_introspection_hint))
             .route("/graphql/playground", web::get().to(graphql_playground))
     })
     .bind((host, port))?

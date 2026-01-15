@@ -26,7 +26,72 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+// checkProductionEnvironment checks if running in a production-like environment
+// and blocks startup unless DOJO_FORCE_START=true is set.
+func checkProductionEnvironment() {
+	indicators := map[string]string{
+		"PRODUCTION":               os.Getenv("PRODUCTION"),
+		"PROD":                     os.Getenv("PROD"),
+		"AWS_EXECUTION_ENV":        os.Getenv("AWS_EXECUTION_ENV"),
+		"AWS_LAMBDA_FUNCTION_NAME": os.Getenv("AWS_LAMBDA_FUNCTION_NAME"),
+		"KUBERNETES_SERVICE_HOST":  os.Getenv("KUBERNETES_SERVICE_HOST"),
+		"ECS_CONTAINER_METADATA_URI": os.Getenv("ECS_CONTAINER_METADATA_URI"),
+		"GOOGLE_CLOUD_PROJECT":     os.Getenv("GOOGLE_CLOUD_PROJECT"),
+		"HEROKU_APP_NAME":          os.Getenv("HEROKU_APP_NAME"),
+		"VERCEL":                   os.Getenv("VERCEL"),
+		"RENDER":                   os.Getenv("RENDER"),
+	}
+
+	// Check NODE_ENV and ENVIRONMENT separately
+	if os.Getenv("NODE_ENV") == "production" {
+		indicators["NODE_ENV=production"] = "true"
+	}
+	if os.Getenv("ENVIRONMENT") == "production" {
+		indicators["ENVIRONMENT=production"] = "true"
+	}
+
+	var detected []string
+	for k, v := range indicators {
+		if v != "" {
+			detected = append(detected, fmt.Sprintf("    - %s: %s", k, v))
+		}
+	}
+
+	if len(detected) > 0 {
+		fmt.Fprintln(os.Stderr, `
+================================================================================
+                    CRITICAL SECURITY WARNING
+================================================================================
+
+  API Security Dojo has detected a PRODUCTION-LIKE environment!
+
+  Detected indicators:`)
+		for _, d := range detected {
+			fmt.Fprintln(os.Stderr, d)
+		}
+		fmt.Fprintln(os.Stderr, `
+  THIS APPLICATION IS INTENTIONALLY VULNERABLE!
+  It contains security vulnerabilities by design for educational purposes.
+
+  DO NOT DEPLOY IN PRODUCTION - You WILL be compromised!
+
+================================================================================`)
+
+		if os.Getenv("DOJO_FORCE_START") != "true" {
+			fmt.Fprintln(os.Stderr, "  To override this safety check (NOT RECOMMENDED), set:")
+			fmt.Fprintln(os.Stderr, "    DOJO_FORCE_START=true")
+			os.Exit(1)
+		} else {
+			fmt.Fprintln(os.Stderr, "  WARNING: DOJO_FORCE_START=true detected.")
+			fmt.Fprintln(os.Stderr, "  Proceeding despite production environment detection.")
+			fmt.Fprintln(os.Stderr, "  YOU HAVE BEEN WARNED!")
+		}
+	}
+}
+
 func main() {
+	// Check production environment before proceeding
+	checkProductionEnvironment()
 	database.InitDB()
 	defer database.Close()
 
