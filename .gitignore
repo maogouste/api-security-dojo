@@ -62,3 +62,8 @@ Thumbs.db
 
 # Project specific
 vulnapi.db
+
+# Binaires compiles : jamais versionnes (un executable opaque dans un depot
+# de securite est le pire artefact possible). Recompiler avec `go build`.
+vulnapi-go
+*.exe
